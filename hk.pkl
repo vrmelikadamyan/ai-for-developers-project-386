@@ -1,0 +1,52 @@
+amends "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Config.pkl"
+import "package://github.com/jdx/hk/releases/download/v2.11.1/hk@2.11.1#/Builtins.pkl"
+
+// Fast checks on staged files before each commit; the full suite (`mise run check`) runs before push.
+local staged = new Mapping<String, Step> {
+  ["oxlint"] {
+    glob = List("frontend/src/**/*.ts", "frontend/src/**/*.tsx")
+    exclude = List("frontend/src/api/generated/**")
+    check = "pnpm --filter frontend exec oxlint --deny-warnings"
+    fix = "pnpm --filter frontend exec oxlint --deny-warnings --fix"
+  }
+  ["oxfmt"] {
+    glob = List("frontend/**/*.ts", "frontend/**/*.tsx", "frontend/**/*.json", "frontend/**/*.html")
+    exclude = List("frontend/src/api/generated/**")
+    check = "pnpm --filter frontend run format:check"
+    fix = "pnpm --filter frontend run format"
+  }
+  ["tsp-format"] {
+    glob = List("spec/**/*.tsp")
+    check = "pnpm exec tsp format --check {{files}}"
+    fix = "pnpm exec tsp format {{files}}"
+  }
+  ["spotless"] {
+    glob = List("backend/src/**/*.java")
+    check = "cd backend && ./mvnw -B -q spotless:check"
+    fix = "cd backend && ./mvnw -B -q spotless:apply"
+  }
+  ["jactionlint"] = (Builtins.jactionlint) {
+    // hexlet-check.yml is managed by Hexlet and must not be edited.
+    exclude = List(".github/workflows/hexlet-check.yml")
+  }
+}
+
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stash = "git"
+    steps = staged
+  }
+  ["commit-msg"] {
+    steps {
+      ["conventional-commit"] = Builtins.check_conventional_commit
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["check"] {
+        check = "mise run check"
+      }
+    }
+  }
+}
