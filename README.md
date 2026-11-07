@@ -40,20 +40,42 @@
 
 ## Стек
 
-- Разное
+- **API-контракт:** [TypeSpec](https://typespec.io/) → OpenAPI 3 (`openapi/openapi.yaml`)
+- **Бекенд:** Java 25, Spring Boot 4, Maven; серверные интерфейсы и DTO генерирует `openapi-generator`
+- **Фронтенд:** TypeScript, React, Vite, Mantine; клиентский SDK генерирует `@hey-api/openapi-ts`
+- **Тесты:** JUnit 5 (бекенд), Vitest + Testing Library (фронтенд)
+- **Линтеры:** Error Prone + NullAway, Spotless (google-java-format), Oxlint + oxfmt, `tsc`, jactionlint
+- **Окружение:** [mise](https://mise.jdx.dev/) (версии инструментов, задачи, daemons), [hk](https://hk.jdx.dev/) (git-хуки)
 
 ## Установка
 
-<!-- Опишите установку: клонирование, зависимости, переменные окружения -->
+Нужен только [mise](https://mise.jdx.dev/getting-started.html), остальные инструменты и их версии он возьмёт из `mise.toml`.
 
 ```bash
 git clone https://github.com/vrmelikadamyan/ai-for-developers-project-386.git
 cd ai-for-developers-project-386
+mise trust
+mise install
+mise run install
 ```
+
+`mise run install` ставит npm-зависимости и git-хуки (`hk install`).
 
 ## Использование
 
-<!-- Добавьте примеры запуска и запись asciinema — именно это смотрит работодатель -->
+```bash
+mise run dev
+```
+
+Запускает бекенд (http://localhost:8080) и фронтенд (http://localhost:5173) фоновыми процессами. Остановить: `mise daemons stop backend frontend`.
+
+```bash
+mise run check
+```
+
+Прогоняет все проверки — линтеры, проверку типов и тесты. Та же команда запускается в GitHub Actions на каждый push.
+
+Остальные задачи: `mise tasks`.
 
 ---
 
