@@ -1,0 +1,95 @@
+# One toolchain for developers, git hooks and CI: `mise install`, `mise run install`, then `mise run check`.
+[settings]
+experimental = true # required for [daemons]
+
+[tools]
+node = "24.22.2"
+pnpm = "12.18.0"
+java = "temurin-25.0.5+8.0.LTS"
+hk = "2.11.1"
+pkl = "0.33.0"
+pitchfork = "2.33.1"
+jactionlint = "2.5.0"
+shellcheck = "0.11.0"
+
+[hooks]
+postinstall = "pnpm install --frozen-lockfile"
+
+# --- Setup ---------------------------------------------------------------
+
+[tasks.install]
+description = "Install dependencies and the git hooks"
+run = ["pnpm install --frozen-lockfile", "hk install --mise"]
+
+# --- API contract: TypeSpec -> OpenAPI -> SDK ----------------------------
+
+[tasks."api:generate"]
+description = "Compile TypeSpec into openapi/openapi.yaml and generate the frontend SDK"
+sources = ["spec/**/*.tsp", "tspconfig.yaml", "openapi-ts.config.ts"]
+outputs = ["openapi/openapi.yaml", "frontend/src/api/generated/index.ts"]
+run = ["pnpm run api:compile", "pnpm run api:sdk"]
+
+# --- Run -----------------------------------------------------------------
+
+# Daemon tasks expect generated code to exist; `mise run dev` generates it once before starting them.
+[tasks."backend:dev"]
+description = "Run the backend on :8080"
+dir = "backend"
+run = "exec ./mvnw -q spring-boot:run"
+
+[tasks."frontend:dev"]
+description = "Run the Vite dev server on :5173 (proxies /api to :8080)"
+dir = "frontend"
+run = "exec pnpm run dev"
+
+[daemons.backend]
+task = "backend:dev"
+ready_port = 8080
+
+[daemons.frontend]
+task = "frontend:dev"
+ready_port = 5173
+
+[tasks.dev]
+description = "Generate API code, then start backend and frontend as background daemons"
+run = [
+  { task = "api:generate" },
+  "mise daemons start backend frontend",
+  "echo 'App: http://localhost:5173  API: http://localhost:8080/api/health  Stop: mise daemons stop backend frontend'",
+]
+
+# --- Checks --------------------------------------------------------------
+
+[tasks.lint]
+description = "Linters and format checks"
+depends = ["api:generate"]
+run = [
+  "pnpm exec tsp format --check 'spec/**/*.tsp'",
+  "pnpm --filter frontend run lint",
+  "pnpm --filter frontend run format:check",
+  "cd backend && ./mvnw -B -q spotless:check",
+  "jactionlint .github/workflows/ci.yml",
+]
+
+[tasks.typecheck]
+description = "Type checks (tsc for frontend, javac + Error Prone/NullAway for backend)"
+depends = ["api:generate"]
+run = ["pnpm --filter frontend run typecheck", "cd backend && ./mvnw -B -q compile"]
+
+[tasks.test]
+description = "Tests (Vitest for frontend, JUnit for backend)"
+depends = ["api:generate"]
+run = ["pnpm --filter frontend run test", "cd backend && ./mvnw -B -q test"]
+
+[tasks.check]
+description = "Run every check, the same set CI runs"
+run = [{ task = "lint" }, { task = "typecheck" }, { task = "test" }]
+
+[tasks.fix]
+description = "Apply automatic fixes (formatters, safe lint fixes)"
+run = [
+  "pnpm exec tsp format 'spec/**/*.tsp'",
+  "pnpm --filter frontend exec oxlint --fix",
+  "pnpm --filter frontend run format",
+  "cd backend && ./mvnw -B -q spotless:apply",
+]

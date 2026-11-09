@@ -1,0 +1,19 @@
+{
+  "name": "calendar",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "scripts": {
+    "api:compile": "tsp compile spec/main.tsp",
+    "api:sdk": "openapi-ts",
+    "api:format": "tsp format \"spec/**/*.tsp\""
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
+    "@typespec/compiler": "1.17.0",
+    "@typespec/http": "1.17.0",
+    "@typespec/openapi": "1.17.0",
+    "@typespec/openapi3": "1.17.0",
+    "typescript": "6.0.3"
+  }
+}
