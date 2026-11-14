@@ -30,3 +30,17 @@ Change the API in `spec/` first, never in generated code: `backend/target/` and 
 - Do not edit or rename `.github/workflows/hexlet-check.yml`; it belongs to Hexlet. Our CI is `.github/workflows/ci.yml`.
 - Backend packages are `@NullMarked` (`package-info.java`), and NullAway fails the build on null misuse. Mark nullable values with `org.jspecify.annotations.Nullable`.
 - The root package pins TypeScript 6 only for the SDK generator, because it needs the TS JS API that TS 7 lacks. The frontend uses TypeScript 7.
+
+## Agent skills
+
+### Issue tracker
+
+Track issues and specs in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the five standard triage labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+The booking service shares one glossary and one directory for architecture decisions. See `docs/agents/domain.md`.
