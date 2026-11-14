@@ -1,38 +1,27 @@
-import { Badge, Container, Group, Text, Title } from '@mantine/core'
-import { useEffect, useState } from 'react'
+import { Anchor, Container, Text, Title } from '@mantine/core'
 
-import { getHealth } from './api/generated'
-
-type ApiStatus = 'loading' | 'ok' | 'error'
-
-const statusLabel: Record<ApiStatus, string> = {
-  loading: 'проверяем…',
-  ok: 'доступен',
-  error: 'недоступен',
+const homePage = {
+  title: 'Календарь звонков',
+  description: 'Здесь можно записаться на звонок с владельцем календаря без регистрации',
+  href: '/book',
+  linkText: 'Записаться',
 }
 
-const statusColor: Record<ApiStatus, string> = {
-  loading: 'gray',
-  ok: 'green',
-  error: 'red',
+const bookingPage = {
+  title: 'Запись на звонок',
+  description: 'Онлайн-запись пока недоступна',
+  href: '/',
+  linkText: 'На главную',
 }
 
 export default function App() {
-  const [status, setStatus] = useState<ApiStatus>('loading')
-
-  useEffect(() => {
-    getHealth()
-      .then(({ data }) => setStatus(data?.status === 'ok' ? 'ok' : 'error'))
-      .catch(() => setStatus('error'))
-  }, [])
+  const page = window.location.pathname === '/book' ? bookingPage : homePage
 
   return (
-    <Container size="sm" py="xl">
-      <Title order={1}>Календарь звонков</Title>
-      <Group mt="md" gap="xs">
-        <Text>API:</Text>
-        <Badge color={statusColor[status]}>{statusLabel[status]}</Badge>
-      </Group>
+    <Container component="main" size="sm" py="xl">
+      <Title order={1}>{page.title}</Title>
+      <Text my="md">{page.description}</Text>
+      <Anchor href={page.href}>{page.linkText}</Anchor>
     </Container>
   )
 }
