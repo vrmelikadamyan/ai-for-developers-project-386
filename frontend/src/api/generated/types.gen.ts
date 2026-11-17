@@ -10,6 +10,20 @@ export type ApiError = {
     field?: string;
 };
 
+export type Booking = BookingInput & {
+    id: Id;
+    meetingTypeName: string;
+    endsAt: string;
+    createdAt: string;
+};
+
+export type BookingInput = {
+    meetingTypeId: Id;
+    startsAt: string;
+    guestName: string;
+    guestEmail: string;
+};
+
 export type CalendarDay = {
     date: string;
     freeCount: number;
@@ -38,6 +52,39 @@ export type Slot = {
 };
 
 export type SlotStatus = 'available' | 'busy';
+
+export type CreateBookingData = {
+    body: BookingInput;
+    path?: never;
+    query?: never;
+    url: '/api/bookings';
+};
+
+export type CreateBookingErrors = {
+    /**
+     * The server could not understand the request due to invalid syntax.
+     */
+    400: ApiError;
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ApiError;
+    /**
+     * The request conflicts with the current state of the server.
+     */
+    409: ApiError;
+};
+
+export type CreateBookingError = CreateBookingErrors[keyof CreateBookingErrors];
+
+export type CreateBookingResponses = {
+    /**
+     * The request has succeeded and a new resource has been created as a result.
+     */
+    201: Booking;
+};
+
+export type CreateBookingResponse = CreateBookingResponses[keyof CreateBookingResponses];
 
 export type GetHealthData = {
     body?: never;

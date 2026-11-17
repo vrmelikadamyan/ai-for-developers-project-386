@@ -17,3 +17,9 @@ CREATE TABLE IF NOT EXISTS bookings (
 );
 
 CREATE INDEX IF NOT EXISTS bookings_starts_at ON bookings(starts_at);
+
+-- All meeting types share this owner's calendar. Confirmations lock its only row.
+CREATE TABLE IF NOT EXISTS owner_calendar (
+  id INTEGER PRIMARY KEY CHECK (id = 1)
+);
+MERGE INTO owner_calendar (id) KEY(id) VALUES (1);

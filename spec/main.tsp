@@ -109,3 +109,41 @@ interface Availability {
     | NotFoundResponse
     | BadRequestResponse;
 }
+
+model BookingInput {
+  meetingTypeId: Id;
+  startsAt: utcDateTime;
+
+  @minLength(1)
+  @maxLength(100)
+  guestName: string;
+
+  @format("email")
+  @maxLength(254)
+  guestEmail: string;
+}
+
+model Booking extends BookingInput {
+  id: Id;
+  meetingTypeName: string;
+  endsAt: utcDateTime;
+  createdAt: utcDateTime;
+}
+
+@route("/bookings")
+@tag("bookings")
+interface Bookings {
+  @post
+  @operationId("createBooking")
+  create(@body input: BookingInput):
+    | {
+        @statusCode statusCode: 201;
+        @body body: Booking;
+      }
+    | BadRequestResponse
+    | NotFoundResponse
+    | {
+        @statusCode statusCode: 409;
+        @body body: ApiError;
+      };
+}

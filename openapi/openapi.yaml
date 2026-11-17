@@ -6,7 +6,45 @@ tags:
   - name: system
   - name: meeting-types
   - name: availability
+  - name: bookings
 paths:
+  /api/bookings:
+    post:
+      operationId: createBooking
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingInput'
   /api/health:
     get:
       operationId: getHealth
@@ -144,6 +182,47 @@ components:
           type: string
         field:
           type: string
+    Booking:
+      type: object
+      required:
+        - id
+        - meetingTypeName
+        - endsAt
+        - createdAt
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        meetingTypeName:
+          type: string
+        endsAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      allOf:
+        - $ref: '#/components/schemas/BookingInput'
+    BookingInput:
+      type: object
+      required:
+        - meetingTypeId
+        - startsAt
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          $ref: '#/components/schemas/Id'
+        startsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        guestEmail:
+          type: string
+          maxLength: 254
+          format: email
     CalendarDay:
       type: object
       required:

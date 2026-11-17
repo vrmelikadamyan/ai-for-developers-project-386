@@ -115,3 +115,122 @@ test('запоздалый ответ не меняет слоты нового 
   fireEvent.click(screen.getByRole('button', { name: 'Продолжить' }))
   expect(screen.getByText(/11 ноября.*09:00–09:30 МСК/)).toBeDefined()
 })
+
+test('гость подтверждает запись и начинает новую с актуальным календарём и пустыми контактами', async () => {
+  const startsAt = '2026-11-11T06:30:00Z'
+  let confirmed = false
+  vi.stubGlobal('fetch', async (request: Request) => {
+    const { pathname } = new URL(request.url)
+    if (pathname === '/api/meeting-types') return Response.json([type])
+    if (pathname.endsWith('/availability'))
+      return Response.json([{ date: '2026-11-11', freeCount: confirmed ? 17 : 18 }])
+    if (pathname.endsWith('/slots'))
+      return Response.json([
+        { startsAt, endsAt: '2026-11-11T07:00:00Z', status: confirmed ? 'busy' : 'available' },
+        { startsAt: '2026-11-11T07:00:00Z', endsAt: '2026-11-11T07:30:00Z', status: 'available' },
+      ])
+    if (request.method === 'POST' && pathname === '/api/bookings') {
+      const contact = await request.json()
+      if (
+        contact.meetingTypeId === type.id &&
+        contact.startsAt === startsAt &&
+        contact.guestName === 'Анна-Мария Ли' &&
+        contact.guestEmail === 'anna+work@example.org'
+      ) {
+        confirmed = true
+        return Response.json(
+          {
+            id: 'cf2da02c-36de-48cc-909a-b13db0e61591',
+            ...contact,
+            meetingTypeName: type.name,
+            endsAt: '2026-11-11T07:00:00Z',
+            createdAt: '2026-11-10T07:00:00Z',
+          },
+          { status: 201 },
+        )
+      }
+    }
+    throw new Error('Некорректный запрос')
+  })
+  openBooking()
+  fireEvent.click(await screen.findByRole('button', { name: type.name }))
+  fireEvent.click(await screen.findByRole('button', { name: /11 ноября.*18/ }))
+  fireEvent.click(await screen.findByRole('button', { name: /09:30–10:00 МСК.*Свободно/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Продолжить' }))
+  fireEvent.change(screen.getByRole('textbox', { name: /Имя/ }), {
+    target: { value: ' Анна-Мария Ли  ' },
+  })
+  fireEvent.change(screen.getByRole('textbox', { name: /Email/i }), {
+    target: { value: ' anna+work@example.org  ' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Подтвердить запись' }))
+  expect(await screen.findByText('Бронь подтверждена. До встречи!')).toBeDefined()
+  fireEvent.click(screen.getByRole('button', { name: 'Забронировать ещё' }))
+  fireEvent.click(await screen.findByRole('button', { name: type.name }))
+  fireEvent.click(await screen.findByRole('button', { name: /11 ноября.*17/ }))
+  expect(
+    (await screen.findByRole<HTMLButtonElement>('button', { name: /09:30–10:00 МСК.*Занято/ }))
+      .disabled,
+  ).toBe(true)
+  fireEvent.click(screen.getByRole('button', { name: /10:00–10:30 МСК.*Свободно/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Продолжить' }))
+  expect(screen.getByRole<HTMLInputElement>('textbox', { name: /Имя/ }).value).toBe('')
+  expect(screen.getByRole<HTMLInputElement>('textbox', { name: /Email/i }).value).toBe('')
+})
+
+test('форма проверяет имя и email, сохраняет выбранный слот и позволяет исправить контакты', async () => {
+  const submissions: unknown[] = []
+  vi.stubGlobal('fetch', async (request: Request) => {
+    const { pathname } = new URL(request.url)
+    if (pathname === '/api/meeting-types') return Response.json([type])
+    if (pathname.endsWith('/availability'))
+      return Response.json([{ date: '2026-11-11', freeCount: 1 }])
+    if (pathname.endsWith('/slots'))
+      return Response.json([
+        { startsAt: '2026-11-11T06:30:00Z', endsAt: '2026-11-11T07:00:00Z', status: 'available' },
+      ])
+    if (request.method === 'POST' && pathname === '/api/bookings') {
+      submissions.push(await request.json())
+      return Response.json({}, { status: 201 })
+    }
+    throw new Error('Некорректный запрос')
+  })
+  openBooking()
+  fireEvent.click(await screen.findByRole('button', { name: type.name }))
+  fireEvent.click(await screen.findByRole('button', { name: /11 ноября/ }))
+  fireEvent.click(await screen.findByRole('button', { name: /09:30–10:00 МСК/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Продолжить' }))
+  const name = screen.getByRole<HTMLInputElement>('textbox', { name: /Имя/ })
+  const email = screen.getByRole<HTMLInputElement>('textbox', { name: /Email/i })
+  const confirm = screen.getByRole('button', { name: 'Подтвердить запись' })
+  for (const [invalidName, invalidEmail] of [
+    ['   ', 'missing-at'],
+    ['😀'.repeat(101), 'a'.repeat(243) + '@example.org'],
+    ['', 'guest@'],
+    ['', 'a b@example.org'],
+  ]) {
+    fireEvent.change(name, { target: { value: invalidName } })
+    fireEvent.change(email, { target: { value: invalidEmail } })
+    fireEvent.click(confirm)
+    expect(name.getAttribute('aria-invalid')).toBe('true')
+    expect(email.getAttribute('aria-invalid')).toBe('true')
+    expect(name.value).toBe(invalidName)
+    expect(email.value).toBe(invalidEmail)
+    expect(screen.getByText(/11 ноября.*09:30–10:00 МСК/)).toBeDefined()
+  }
+  expect(submissions).toHaveLength(0)
+  const validName = '😀'.repeat(100)
+  const validEmail = 'a'.repeat(242) + '@example.org'
+  fireEvent.change(name, { target: { value: ' ' + validName + ' ' } })
+  fireEvent.change(email, { target: { value: ' ' + validEmail + ' ' } })
+  fireEvent.click(confirm)
+  expect(await screen.findByText('Бронь подтверждена. До встречи!')).toBeDefined()
+  expect(submissions).toEqual([
+    {
+      meetingTypeId: type.id,
+      startsAt: '2026-11-11T06:30:00Z',
+      guestName: validName,
+      guestEmail: validEmail,
+    },
+  ])
+})

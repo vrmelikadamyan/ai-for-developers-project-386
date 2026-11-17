@@ -2,6 +2,8 @@ package io.hexlet.calendar.system;
 
 import io.hexlet.calendar.api.model.ApiError;
 import io.hexlet.calendar.availability.MeetingTypeNotFound;
+import io.hexlet.calendar.booking.InvalidStart;
+import io.hexlet.calendar.booking.SlotTaken;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,6 +16,18 @@ import tools.jackson.core.JacksonException;
 
 @RestControllerAdvice
 public class ApiErrorHandler {
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.CONFLICT)
+  ApiError slotTaken(SlotTaken error) {
+    return new ApiError("SLOT_TAKEN", "Слот занят");
+  }
+
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  ApiError invalidStart(InvalidStart error) {
+    return new ApiError("INVALID_START", "Это время уже недоступно").field("startsAt");
+  }
+
   @ExceptionHandler
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   ApiError invalidParameter(MethodArgumentTypeMismatchException error) {

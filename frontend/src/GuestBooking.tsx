@@ -3,10 +3,23 @@ import { useState } from 'react'
 
 import { type MeetingType, type Slot } from './api'
 import { BookingCalendar } from './BookingCalendar'
+import { BookingForm } from './BookingForm'
 import { formatDay, formatSlot } from './bookingTime'
 import { MeetingTypeList } from './MeetingTypeList'
 
 export function GuestBooking() {
+  const [confirmed, setConfirmed] = useState(false)
+  if (confirmed)
+    return (
+      <>
+        <Title order={2}>Бронь подтверждена. До встречи!</Title>
+        <Button onClick={() => setConfirmed(false)}>Забронировать ещё</Button>
+      </>
+    )
+  return <BookingAttempt onConfirmed={() => setConfirmed(true)} />
+}
+
+function BookingAttempt({ onConfirmed }: { onConfirmed: () => void }) {
   const [type, setType] = useState<MeetingType | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [slot, setSlot] = useState<Slot | null>(null)
@@ -20,9 +33,12 @@ export function GuestBooking() {
         <Text>
           {formatDay(date)}, {formatSlot(slot.startsAt, slot.endsAt)}
         </Text>
-        <Button variant="light" onClick={() => setSlot(null)}>
-          Выбрать другое время
-        </Button>
+        <BookingForm
+          typeId={type.id}
+          startsAt={slot.startsAt}
+          onConfirmed={onConfirmed}
+          onBack={() => setSlot(null)}
+        />
       </>
     )
 
