@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0](https://github.com/vrmelikadamyan/ai-for-developers-project-386/compare/v1.0.0...v1.1.0) (2026-11-17)
+
+
+### Features
+
+* deploy the call calendar on Render ([#27](https://github.com/vrmelikadamyan/ai-for-developers-project-386/issues/27)) ([a8a7d45](https://github.com/vrmelikadamyan/ai-for-developers-project-386/commit/a8a7d455276b94c4750ff2957b558ecc6b297adf))
+* package calendar for deployment on Render ([#27](https://github.com/vrmelikadamyan/ai-for-developers-project-386/issues/27)) ([276b9ac](https://github.com/vrmelikadamyan/ai-for-developers-project-386/commit/276b9ac0cb2dc96fd604ed459071d39dfef86310))
+* redesign the call booking calendar ([#31](https://github.com/vrmelikadamyan/ai-for-developers-project-386/issues/31)) ([aa3f8c8](https://github.com/vrmelikadamyan/ai-for-developers-project-386/commit/aa3f8c80244d2d8b2bff1200ba638478b55004ae)), closes [#30](https://github.com/vrmelikadamyan/ai-for-developers-project-386/issues/30)
+
 ## 1.0.0 (2026-11-17)
 
 
