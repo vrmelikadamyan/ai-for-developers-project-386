@@ -1,5 +1,6 @@
 package io.hexlet.calendar;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class AvailabilityHttpTest extends CalendarHttpTest {
@@ -18,7 +19,7 @@ class AvailabilityHttpTest extends CalendarHttpTest {
           .isEqualTo(14)
           .jsonPath("$[*].date")
           .isEqualTo(
-              java.util.List.of(
+              List.of(
                   "2026-11-10",
                   "2026-11-11",
                   "2026-11-12",
@@ -98,7 +99,7 @@ class AvailabilityHttpTest extends CalendarHttpTest {
           .isEqualTo("2026-11-23T14:15:00Z")
           .jsonPath("$[11].endsAt")
           .isEqualTo("2026-11-23T15:00:00Z");
-      for (var date : java.util.List.of("2026-11-09", "2026-11-24")) {
+      for (var date : List.of("2026-11-09", "2026-11-24")) {
         http.get()
             .uri(path, id, date)
             .exchange()
@@ -116,16 +117,18 @@ class AvailabilityHttpTest extends CalendarHttpTest {
     try (var app = start()) {
       var http = http(app);
       var id = publish(http, 30);
-      http.get()
-          .uri("/api/meeting-types/{id}/slots?date=2026-02-30", id)
-          .exchange()
-          .expectStatus()
-          .isBadRequest()
-          .expectBody()
-          .jsonPath("$.code")
-          .isEqualTo("INVALID_INPUT")
-          .jsonPath("$.field")
-          .isEqualTo("date");
+      for (var invalidDate : List.of("2026-02-30", "2026-11-18Z", "2026-11-18+03:00")) {
+        http.get()
+            .uri("/api/meeting-types/{id}/slots?date={date}", id, invalidDate)
+            .exchange()
+            .expectStatus()
+            .isBadRequest()
+            .expectBody()
+            .jsonPath("$.code")
+            .isEqualTo("INVALID_INPUT")
+            .jsonPath("$.field")
+            .isEqualTo("date");
+      }
       http.get()
           .uri("/api/meeting-types/{id}/slots", id)
           .exchange()
@@ -134,14 +137,18 @@ class AvailabilityHttpTest extends CalendarHttpTest {
           .expectBody()
           .jsonPath("$.field")
           .isEqualTo("date");
-      http.get()
-          .uri("/api/meeting-types/oops/availability")
-          .exchange()
-          .expectStatus()
-          .isBadRequest()
-          .expectBody()
-          .jsonPath("$.field")
-          .isEqualTo("id");
+      for (var invalidId : List.of("oops", "1-1-1-1-1")) {
+        http.get()
+            .uri("/api/meeting-types/{id}/availability", invalidId)
+            .exchange()
+            .expectStatus()
+            .isBadRequest()
+            .expectBody()
+            .jsonPath("$.code")
+            .isEqualTo("INVALID_INPUT")
+            .jsonPath("$.field")
+            .isEqualTo("id");
+      }
       http.get()
           .uri("/api/meeting-types/{id}/availability", java.util.UUID.randomUUID())
           .exchange()

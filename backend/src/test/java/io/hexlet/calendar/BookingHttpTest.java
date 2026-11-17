@@ -53,7 +53,7 @@ class BookingHttpTest extends CalendarHttpTest {
           book(
                   http,
                   halfHour,
-                  "2026-11-11T06:30:00Z",
+                  "2026-11-11T09:30:00.000+03:00",
                   "  Анна-Мария Ли ",
                   " anna+work@example.org  ")
               .expectStatus()
@@ -101,6 +101,7 @@ class BookingHttpTest extends CalendarHttpTest {
               "2026-11-10T07:00:00Z",
               "2026-11-11T05:30:00Z",
               "2026-11-11T06:10:00Z",
+              "2026-11-11T06:30:00.000000001Z",
               "2026-11-11T15:00:00Z")) {
         book(http, type, at, "Анна", "guest@example.org")
             .expectStatus()
@@ -149,7 +150,15 @@ class BookingHttpTest extends CalendarHttpTest {
           new String[][] {
             {"meetingTypeId", "AAAAAAAAAAAAAAAAAAAAAA=="},
             {"meetingTypeId", "not-a-uuid"},
+            {"meetingTypeId", "1-1-1-1-1"},
+            {"meetingTypeId", " " + type + " "},
             {"startsAt", "2026-02-30"},
+            {"startsAt", "2026-11-10T24:00:00-06:00"},
+            {"startsAt", "2026-11-11T06:30Z"},
+            {"startsAt", "+02026-11-11T06:30:00Z"},
+            {"startsAt", "2026-11-11T06:30:00+00:00:00"},
+            {"startsAt", "2026-11-11T06:30:00.Z"},
+            {"startsAt", " " + start + " "},
             {"guestName", "  "},
             {"guestName", "😀".repeat(101)},
             {"guestEmail", "  "},
