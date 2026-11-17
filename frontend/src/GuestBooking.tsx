@@ -23,6 +23,8 @@ function BookingAttempt({ onConfirmed }: { onConfirmed: () => void }) {
   const [type, setType] = useState<MeetingType | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [slot, setSlot] = useState<Slot | null>(null)
+  const [contact, setContact] = useState({ guestName: '', guestEmail: '' })
+  const [notice, setNotice] = useState('')
   if (!type) return <MeetingTypeList onSelect={setType} />
 
   if (slot && date)
@@ -37,7 +39,12 @@ function BookingAttempt({ onConfirmed }: { onConfirmed: () => void }) {
           typeId={type.id}
           startsAt={slot.startsAt}
           onConfirmed={onConfirmed}
-          onBack={() => setSlot(null)}
+          contact={contact}
+          onContactChange={setContact}
+          onBack={(message = '') => {
+            setNotice(message)
+            setSlot(null)
+          }}
         />
       </>
     )
@@ -48,12 +55,14 @@ function BookingAttempt({ onConfirmed }: { onConfirmed: () => void }) {
       <Button
         variant="subtle"
         onClick={() => {
+          setNotice('')
           setDate(null)
           setType(null)
         }}
       >
         Выбрать другой тип встречи
       </Button>
+      {notice && <Text role="alert">{notice}</Text>}
       <BookingCalendar typeId={type.id} date={date} onDate={setDate} onContinue={setSlot} />
     </>
   )

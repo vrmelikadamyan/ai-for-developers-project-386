@@ -1,25 +1,36 @@
 import { Button, Stack, Text, TextInput } from '@mantine/core'
 import { type FormEvent, useState } from 'react'
 
-import { createBooking } from './api'
+import { type BookingInput, createBooking } from './api'
+
+type GuestContact = Pick<BookingInput, 'guestName' | 'guestEmail'>
 
 interface BookingFormProps {
   typeId: string
   startsAt: string
   onConfirmed: () => void
-  onBack: () => void
+  contact: GuestContact
+  onContactChange: (contact: GuestContact) => void
+  onBack: (notice?: string) => void
 }
 
-export function BookingForm({ typeId, startsAt, onConfirmed, onBack }: BookingFormProps) {
+export function BookingForm({
+  typeId,
+  startsAt,
+  contact,
+  onContactChange,
+  onConfirmed,
+  onBack,
+}: BookingFormProps) {
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<{ guestName?: string; guestEmail?: string }>({})
   const [failed, setFailed] = useState(false)
 
   async function confirm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const guestName = String(form.get('guestName')).trim()
-    const guestEmail = String(form.get('guestEmail')).trim()
+    if (saving) return
+    const guestName = contact.guestName.trim()
+    const guestEmail = contact.guestEmail.trim()
     const nextErrors: typeof errors = {}
     if (!guestName || [...guestName].length > 100)
       nextErrors.guestName = 'Введите имя длиной от 1 до 100 символов'
@@ -29,16 +40,26 @@ export function BookingForm({ typeId, startsAt, onConfirmed, onBack }: BookingFo
     setFailed(false)
     if (nextErrors.guestName || nextErrors.guestEmail) return
     setSaving(true)
-    try {
-      await createBooking({
-        body: { meetingTypeId: typeId, startsAt, guestName, guestEmail },
-        throwOnError: true,
-      })
+    const { data, error, response } = await createBooking({
+      body: { meetingTypeId: typeId, startsAt, guestName, guestEmail },
+    })
+    setSaving(false)
+    if (response?.status === 201 && data) {
       onConfirmed()
-    } catch {
+    } else if (response?.status === 409 && error?.code === 'SLOT_TAKEN') {
+      onBack('Это время уже занято. Выберите другой слот')
+    } else if (response?.status === 400 && error?.code === 'INVALID_START') {
+      onBack('Это время уже недоступно')
+    } else if (
+      response?.status === 400 &&
+      error?.code === 'INVALID_INPUT' &&
+      (error.field === 'guestName' || error.field === 'guestEmail') &&
+      typeof error.message === 'string' &&
+      error.message.trim()
+    ) {
+      setErrors({ [error.field]: error.message })
+    } else {
       setFailed(true)
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -48,6 +69,11 @@ export function BookingForm({ typeId, startsAt, onConfirmed, onBack }: BookingFo
         <TextInput
           label="Имя"
           name="guestName"
+          value={contact.guestName}
+          disabled={saving}
+          onChange={(event) =>
+            onContactChange({ ...contact, guestName: event.currentTarget.value })
+          }
           autoComplete="name"
           error={errors.guestName}
           required
@@ -55,6 +81,11 @@ export function BookingForm({ typeId, startsAt, onConfirmed, onBack }: BookingFo
         <TextInput
           label="Email"
           name="guestEmail"
+          value={contact.guestEmail}
+          disabled={saving}
+          onChange={(event) =>
+            onContactChange({ ...contact, guestEmail: event.currentTarget.value })
+          }
           type="email"
           autoComplete="email"
           error={errors.guestEmail}
@@ -64,7 +95,7 @@ export function BookingForm({ typeId, startsAt, onConfirmed, onBack }: BookingFo
         <Button type="submit" loading={saving}>
           Подтвердить запись
         </Button>
-        <Button type="button" variant="light" disabled={saving} onClick={onBack}>
+        <Button type="button" variant="light" disabled={saving} onClick={() => onBack()}>
           Выбрать другое время
         </Button>
       </Stack>
