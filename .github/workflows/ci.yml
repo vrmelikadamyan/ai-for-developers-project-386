@@ -31,10 +31,13 @@ jobs:
           restore-keys: maven-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: mise exec -- pnpm install --frozen-lockfile
+
+      - name: Start with empty generated directories
+        run: mise exec -- rm -rf -- openapi frontend/src/api/generated
 
       - name: Run all checks
         run: mise run check
 
-      - name: Generated OpenAPI spec is committed
-        run: git diff --exit-code -- openapi/
+      - name: Check committed OpenAPI and frontend SDK
+        run: mise run api:check-generated

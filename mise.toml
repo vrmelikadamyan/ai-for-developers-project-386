@@ -24,10 +24,22 @@ run = ["pnpm install --frozen-lockfile", "hk install --mise"]
 # --- API contract: TypeSpec -> OpenAPI -> SDK ----------------------------
 
 [tasks."api:generate"]
-description = "Compile TypeSpec into openapi/openapi.yaml and generate the frontend SDK"
-sources = ["spec/**/*.tsp", "tspconfig.yaml", "openapi-ts.config.ts"]
-outputs = ["openapi/openapi.yaml", "frontend/src/api/generated/index.ts"]
-run = ["pnpm run api:compile", "pnpm run api:sdk"]
+description = "Generate OpenAPI, Spring interfaces and DTOs, and the frontend SDK from TypeSpec"
+run = [
+  "pnpm run api:compile",
+  "cd backend && ./mvnw -B -q generate-sources",
+  "pnpm run api:sdk",
+]
+
+[tasks."api:check-generated"]
+description = "Check regenerated OpenAPI and SDK against the clean checkout"
+run = '''
+changes=$(git status --porcelain --untracked-files=all -- openapi frontend/src/api/generated)
+if [ -n "$changes" ]; then
+  echo "$changes"
+  exit 1
+fi
+'''
 
 # --- Run -----------------------------------------------------------------
 

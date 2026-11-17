@@ -1,27 +1,30 @@
-import { Anchor, Container, Text, Title } from '@mantine/core'
+import { Anchor, Container, Stack, Text, Title } from '@mantine/core'
 
-const homePage = {
-  title: 'Календарь звонков',
-  description: 'Здесь можно записаться на звонок с владельцем календаря без регистрации',
-  href: '/book',
-  linkText: 'Записаться',
-}
-
-const bookingPage = {
-  title: 'Запись на звонок',
-  description: 'Онлайн-запись пока недоступна',
-  href: '/',
-  linkText: 'На главную',
-}
+import { OwnerMeetingTypes } from './OwnerMeetingTypes'
+import { MeetingTypeList } from './MeetingTypeList'
 
 export default function App() {
-  const page = window.location.pathname === '/book' ? bookingPage : homePage
-
+  const path = window.location.pathname
   return (
     <Container component="main" size="sm" py="xl">
-      <Title order={1}>{page.title}</Title>
-      <Text my="md">{page.description}</Text>
-      <Anchor href={page.href}>{page.linkText}</Anchor>
+      <Stack align="flex-start">
+        {path === '/owner/meeting-types' ? (
+          <OwnerMeetingTypes />
+        ) : path === '/book' ? (
+          <>
+            <Title order={1}>Запись на звонок</Title>
+            <MeetingTypeList />
+            <Anchor href="/">На главную</Anchor>
+          </>
+        ) : (
+          <>
+            <Title order={1}>Календарь звонков</Title>
+            <Text>Здесь можно записаться на звонок с владельцем календаря без регистрации</Text>
+            <Anchor href="/book">Записаться</Anchor>
+            <Anchor href="/owner/meeting-types">Типы встреч</Anchor>
+          </>
+        )}
+      </Stack>
     </Container>
   )
 }
