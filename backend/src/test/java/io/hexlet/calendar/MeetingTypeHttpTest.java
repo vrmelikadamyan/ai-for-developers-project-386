@@ -1,31 +1,10 @@
 package io.hexlet.calendar;
 
-import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.client.RestTestClient;
 
-class MeetingTypeHttpTest {
-  @TempDir Path directory;
-
-  private ConfigurableApplicationContext start() {
-    return new SpringApplicationBuilder(CalendarApplication.class)
-        .run(
-            "--server.port=0",
-            "--spring.datasource.url=jdbc:h2:file:" + directory.resolve("calendar"));
-  }
-
-  private RestTestClient http(ConfigurableApplicationContext app) {
-    return RestTestClient.bindToServer()
-        .baseUrl(
-            "http://localhost:" + app.getEnvironment().getRequiredProperty("local.server.port"))
-        .build();
-  }
-
+class MeetingTypeHttpTest extends CalendarHttpTest {
   @Test
   void createdTypeRemainsAvailableToGuestsAfterRestart() {
     String id;
