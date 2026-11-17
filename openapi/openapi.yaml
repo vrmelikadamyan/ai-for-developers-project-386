@@ -25,19 +25,59 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    anyOf:
+                      - type: string
+                        enum:
+                          - INVALID_INPUT
+                      - type: string
+                        enum:
+                          - INVALID_START
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
         '404':
           description: The server cannot find the requested resource.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - MEETING_TYPE_NOT_FOUND
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
         '409':
           description: The request conflicts with the current state of the server.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - SLOT_TAKEN
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
       tags:
         - bookings
       requestBody:
@@ -89,7 +129,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INVALID_INPUT
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
       tags:
         - meeting-types
       requestBody:
@@ -121,13 +173,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INVALID_INPUT
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
         '404':
           description: The server cannot find the requested resource.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - MEETING_TYPE_NOT_FOUND
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
       tags:
         - availability
   /api/meeting-types/{id}/slots:
@@ -160,13 +236,37 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INVALID_INPUT
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
         '404':
           description: The server cannot find the requested resource.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ApiError'
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - MEETING_TYPE_NOT_FOUND
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
       tags:
         - availability
   /api/owner/bookings/upcoming:
@@ -193,7 +293,7 @@ components:
         - message
       properties:
         code:
-          type: string
+          $ref: '#/components/schemas/ErrorCode'
         message:
           type: string
         field:
@@ -201,30 +301,14 @@ components:
     Booking:
       type: object
       required:
-        - id
-        - meetingTypeName
-        - endsAt
-        - createdAt
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-        meetingTypeName:
-          type: string
-        endsAt:
-          type: string
-          format: date-time
-        createdAt:
-          type: string
-          format: date-time
-      allOf:
-        - $ref: '#/components/schemas/BookingInput'
-    BookingInput:
-      type: object
-      required:
         - meetingTypeId
         - startsAt
         - guestName
         - guestEmail
+        - id
+        - meetingTypeName
+        - endsAt
+        - createdAt
       properties:
         meetingTypeId:
           $ref: '#/components/schemas/Id'
@@ -239,6 +323,38 @@ components:
           type: string
           maxLength: 254
           format: email
+        id:
+          $ref: '#/components/schemas/Id'
+        meetingTypeName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        endsAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    BookingInput:
+      type: object
+      required:
+        - meetingTypeId
+        - startsAt
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          $ref: '#/components/schemas/Id'
+        startsAt:
+          type: string
+          format: date-time
+          description: A timestamp with seconds and an explicit UTC offset. Fractional seconds have up to nine digits.
+        guestName:
+          type: string
+          description: Trim surrounding whitespace, then require 1–100 Unicode code points.
+        guestEmail:
+          type: string
+          description: Trim surrounding whitespace, then require an email of at most 254 Unicode code points.
     CalendarDay:
       type: object
       required:
@@ -251,6 +367,13 @@ components:
         freeCount:
           type: integer
           format: int32
+    ErrorCode:
+      type: string
+      enum:
+        - INVALID_INPUT
+        - INVALID_START
+        - MEETING_TYPE_NOT_FOUND
+        - SLOT_TAKEN
     Health:
       type: object
       required:
@@ -266,17 +389,9 @@ components:
     MeetingType:
       type: object
       required:
-        - id
-      properties:
-        id:
-          $ref: '#/components/schemas/Id'
-      allOf:
-        - $ref: '#/components/schemas/MeetingTypeInput'
-    MeetingTypeInput:
-      type: object
-      required:
         - name
         - durationMinutes
+        - id
       properties:
         name:
           type: string
@@ -285,6 +400,25 @@ components:
         description:
           type: string
           maxLength: 1000
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 540
+        id:
+          $ref: '#/components/schemas/Id'
+    MeetingTypeInput:
+      type: object
+      required:
+        - name
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          description: Trim surrounding whitespace, then require 1–100 Unicode code points.
+        description:
+          type: string
+          description: Trim surrounding whitespace, then allow up to 1000 Unicode code points.
         durationMinutes:
           type: integer
           format: int32

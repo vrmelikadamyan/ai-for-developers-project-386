@@ -25,11 +25,10 @@ interface System {
 scalar Id extends string;
 
 model MeetingTypeInput {
-  @minLength(1)
-  @maxLength(100)
+  /** Trim surrounding whitespace, then require 1–100 Unicode code points. */
   name: string;
 
-  @maxLength(1000)
+  /** Trim surrounding whitespace, then allow up to 1000 Unicode code points. */
   description?: string;
 
   @minValue(1)
@@ -37,12 +36,27 @@ model MeetingTypeInput {
   durationMinutes: int32;
 }
 
-model MeetingType extends MeetingTypeInput {
+model MeetingType {
+  @minLength(1)
+  @maxLength(100)
+  name: string;
+
+  @maxLength(1000)
+  description?: string;
+
+  durationMinutes: MeetingTypeInput.durationMinutes;
   id: Id;
 }
 
+enum ErrorCode {
+  INVALID_INPUT,
+  INVALID_START,
+  MEETING_TYPE_NOT_FOUND,
+  SLOT_TAKEN,
+}
+
 model ApiError {
-  code: string;
+  code: ErrorCode;
   message: string;
   field?: string;
 }
@@ -61,10 +75,7 @@ interface MeetingTypes {
         @statusCode statusCode: 201;
         @body body: MeetingType;
       }
-    | {
-        @statusCode statusCode: 400;
-        @body body: ApiError;
-      };
+    | InvalidInputResponse;
 }
 
 enum SlotStatus {
@@ -83,15 +94,16 @@ model CalendarDay {
   freeCount: int32;
 }
 
-model NotFoundResponse {
-  @statusCode statusCode: 404;
-  @body body: ApiError;
+model ErrorResponse<Status extends int32, Code extends ErrorCode> {
+  @statusCode statusCode: Status;
+  @body body: {
+    code: Code;
+    ...OmitProperties<ApiError, "code">;
+  };
 }
 
-model BadRequestResponse {
-  @statusCode statusCode: 400;
-  @body body: ApiError;
-}
+alias NotFoundResponse = ErrorResponse<404, ErrorCode.MEETING_TYPE_NOT_FOUND>;
+alias InvalidInputResponse = ErrorResponse<400, ErrorCode.INVALID_INPUT>;
 
 @route("/meeting-types/{id}")
 @tag("availability")
@@ -99,7 +111,7 @@ interface Availability {
   @get
   @route("/availability")
   @operationId("getAvailability")
-  dates(@path id: Id): CalendarDay[] | NotFoundResponse | BadRequestResponse;
+  dates(@path id: Id): CalendarDay[] | NotFoundResponse | InvalidInputResponse;
 
   @get
   @route("/slots")
@@ -107,10 +119,23 @@ interface Availability {
   slots(@path id: Id, @query date: plainDate):
     | Slot[]
     | NotFoundResponse
-    | BadRequestResponse;
+    | InvalidInputResponse;
 }
 
 model BookingInput {
+  meetingTypeId: Id;
+
+  /** A timestamp with seconds and an explicit UTC offset. Fractional seconds have up to nine digits. */
+  startsAt: utcDateTime;
+
+  /** Trim surrounding whitespace, then require 1–100 Unicode code points. */
+  guestName: string;
+
+  /** Trim surrounding whitespace, then require an email of at most 254 Unicode code points. */
+  guestEmail: string;
+}
+
+model Booking {
   meetingTypeId: Id;
   startsAt: utcDateTime;
 
@@ -121,11 +146,9 @@ model BookingInput {
   @format("email")
   @maxLength(254)
   guestEmail: string;
-}
 
-model Booking extends BookingInput {
   id: Id;
-  meetingTypeName: string;
+  meetingTypeName: MeetingType.name;
   endsAt: utcDateTime;
   createdAt: utcDateTime;
 }
@@ -140,12 +163,9 @@ interface Bookings {
         @statusCode statusCode: 201;
         @body body: Booking;
       }
-    | BadRequestResponse
+    | ErrorResponse<400, ErrorCode.INVALID_INPUT | ErrorCode.INVALID_START>
     | NotFoundResponse
-    | {
-        @statusCode statusCode: 409;
-        @body body: ApiError;
-      };
+    | ErrorResponse<409, ErrorCode.SLOT_TAKEN>;
 }
 
 @route("/owner/bookings")

@@ -1,6 +1,7 @@
 package io.hexlet.calendar.system;
 
 import io.hexlet.calendar.api.model.ApiError;
+import io.hexlet.calendar.api.model.ErrorCode;
 import io.hexlet.calendar.availability.MeetingTypeNotFound;
 import io.hexlet.calendar.booking.InvalidStart;
 import io.hexlet.calendar.booking.SlotTaken;
@@ -19,38 +20,39 @@ public class ApiErrorHandler {
   @ExceptionHandler
   @ResponseStatus(HttpStatus.CONFLICT)
   ApiError slotTaken(SlotTaken error) {
-    return new ApiError("SLOT_TAKEN", "Слот занят");
+    return new ApiError(ErrorCode.SLOT_TAKEN, "Слот занят");
   }
 
   @ExceptionHandler
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   ApiError invalidStart(InvalidStart error) {
-    return new ApiError("INVALID_START", "Это время уже недоступно").field("startsAt");
+    return new ApiError(ErrorCode.INVALID_START, "Это время уже недоступно").field("startsAt");
   }
 
   @ExceptionHandler
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   ApiError invalidParameter(MethodArgumentTypeMismatchException error) {
-    return new ApiError("INVALID_INPUT", "Проверьте формат параметра").field(error.getName());
+    return new ApiError(ErrorCode.INVALID_INPUT, "Проверьте формат параметра")
+        .field(error.getName());
   }
 
   @ExceptionHandler
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   ApiError missingParameter(MissingServletRequestParameterException error) {
-    return new ApiError("INVALID_INPUT", "Обязательный параметр пропущен")
+    return new ApiError(ErrorCode.INVALID_INPUT, "Обязательный параметр пропущен")
         .field(error.getParameterName());
   }
 
   @ExceptionHandler
   @ResponseStatus(HttpStatus.NOT_FOUND)
   ApiError meetingTypeNotFound(MeetingTypeNotFound error) {
-    return new ApiError("MEETING_TYPE_NOT_FOUND", "Тип встречи не найден");
+    return new ApiError(ErrorCode.MEETING_TYPE_NOT_FOUND, "Тип встречи не найден");
   }
 
   @ExceptionHandler
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   ApiError invalidInput(InvalidInput error) {
-    return new ApiError("INVALID_INPUT", error.getMessage()).field(error.field());
+    return new ApiError(ErrorCode.INVALID_INPUT, error.getMessage()).field(error.field());
   }
 
   @ExceptionHandler
@@ -60,6 +62,6 @@ public class ApiErrorHandler {
     if (error.getCause() instanceof JacksonException json && !json.getPath().isEmpty()) {
       field = json.getPath().getFirst().getPropertyName();
     }
-    return new ApiError("INVALID_INPUT", "Проверьте формат запроса").field(field);
+    return new ApiError(ErrorCode.INVALID_INPUT, "Проверьте формат запроса").field(field);
   }
 }

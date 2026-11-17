@@ -5,12 +5,16 @@ export type ClientOptions = {
 };
 
 export type ApiError = {
-    code: string;
+    code: ErrorCode;
     message: string;
     field?: string;
 };
 
-export type Booking = BookingInput & {
+export type Booking = {
+    meetingTypeId: Id;
+    startsAt: string;
+    guestName: string;
+    guestEmail: string;
     id: Id;
     meetingTypeName: string;
     endsAt: string;
@@ -19,8 +23,17 @@ export type Booking = BookingInput & {
 
 export type BookingInput = {
     meetingTypeId: Id;
+    /**
+     * A timestamp with seconds and an explicit UTC offset. Fractional seconds have up to nine digits.
+     */
     startsAt: string;
+    /**
+     * Trim surrounding whitespace, then require 1–100 Unicode code points.
+     */
     guestName: string;
+    /**
+     * Trim surrounding whitespace, then require an email of at most 254 Unicode code points.
+     */
     guestEmail: string;
 };
 
@@ -29,18 +42,29 @@ export type CalendarDay = {
     freeCount: number;
 };
 
+export type ErrorCode = 'INVALID_INPUT' | 'INVALID_START' | 'MEETING_TYPE_NOT_FOUND' | 'SLOT_TAKEN';
+
 export type Health = {
     status: 'ok';
 };
 
 export type Id = string;
 
-export type MeetingType = MeetingTypeInput & {
+export type MeetingType = {
+    name: string;
+    description?: string;
+    durationMinutes: number;
     id: Id;
 };
 
 export type MeetingTypeInput = {
+    /**
+     * Trim surrounding whitespace, then require 1–100 Unicode code points.
+     */
     name: string;
+    /**
+     * Trim surrounding whitespace, then allow up to 1000 Unicode code points.
+     */
     description?: string;
     durationMinutes: number;
 };
@@ -64,15 +88,27 @@ export type CreateBookingErrors = {
     /**
      * The server could not understand the request due to invalid syntax.
      */
-    400: ApiError;
+    400: {
+        code: 'INVALID_INPUT' | 'INVALID_START';
+        message: string;
+        field?: string;
+    };
     /**
      * The server cannot find the requested resource.
      */
-    404: ApiError;
+    404: {
+        code: 'MEETING_TYPE_NOT_FOUND';
+        message: string;
+        field?: string;
+    };
     /**
      * The request conflicts with the current state of the server.
      */
-    409: ApiError;
+    409: {
+        code: 'SLOT_TAKEN';
+        message: string;
+        field?: string;
+    };
 };
 
 export type CreateBookingError = CreateBookingErrors[keyof CreateBookingErrors];
@@ -129,7 +165,11 @@ export type CreateMeetingTypeErrors = {
     /**
      * The server could not understand the request due to invalid syntax.
      */
-    400: ApiError;
+    400: {
+        code: 'INVALID_INPUT';
+        message: string;
+        field?: string;
+    };
 };
 
 export type CreateMeetingTypeError = CreateMeetingTypeErrors[keyof CreateMeetingTypeErrors];
@@ -156,11 +196,19 @@ export type GetAvailabilityErrors = {
     /**
      * The server could not understand the request due to invalid syntax.
      */
-    400: ApiError;
+    400: {
+        code: 'INVALID_INPUT';
+        message: string;
+        field?: string;
+    };
     /**
      * The server cannot find the requested resource.
      */
-    404: ApiError;
+    404: {
+        code: 'MEETING_TYPE_NOT_FOUND';
+        message: string;
+        field?: string;
+    };
 };
 
 export type GetAvailabilityError = GetAvailabilityErrors[keyof GetAvailabilityErrors];
@@ -189,11 +237,19 @@ export type GetSlotsErrors = {
     /**
      * The server could not understand the request due to invalid syntax.
      */
-    400: ApiError;
+    400: {
+        code: 'INVALID_INPUT';
+        message: string;
+        field?: string;
+    };
     /**
      * The server cannot find the requested resource.
      */
-    404: ApiError;
+    404: {
+        code: 'MEETING_TYPE_NOT_FOUND';
+        message: string;
+        field?: string;
+    };
 };
 
 export type GetSlotsError = GetSlotsErrors[keyof GetSlotsErrors];
