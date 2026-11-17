@@ -79,6 +79,30 @@ test('когда свободного времени нет за все 14 дн�
   expect(await screen.findByRole('button', { name: 'Короткий звонок' })).toBeDefined()
 })
 
+test('если последний слот заняли до выбора даты, обновляются счётчики дня и всего окна', async () => {
+  vi.stubGlobal('fetch', async (request: Request) => {
+    const { pathname } = new URL(request.url)
+    if (pathname === '/api/meeting-types') return Response.json([type])
+    if (pathname === `/api/meeting-types/${type.id}/availability`) {
+      return Response.json([
+        { date: '2026-11-10', freeCount: 0 },
+        { date: '2026-11-11', freeCount: 1 },
+      ])
+    }
+    if (pathname === `/api/meeting-types/${type.id}/slots`)
+      return Response.json([
+        { startsAt: '2026-11-11T06:00:00Z', endsAt: '2026-11-11T06:30:00Z', status: 'busy' },
+      ])
+    throw new Error('Неизвестный путь')
+  })
+  openBooking()
+  fireEvent.click(await screen.findByRole('button', { name: type.name }))
+  fireEvent.click(await screen.findByRole('button', { name: '11 ноября · Свободно 1' }))
+  expect(await screen.findByText('На этот день свободного времени нет')).toBeDefined()
+  expect(screen.getByRole('button', { name: '11 ноября · Свободно 0' })).toBeDefined()
+  expect(screen.getByText('За ближайшие 14 дней свободного времени нет')).toBeDefined()
+})
+
 test('запоздалый ответ не меняет слоты нового выбранного дня', async () => {
   let finishRequest: (response: Response) => void = () => {
     throw new Error('Запрос ещё не начался')
@@ -111,6 +135,7 @@ test('запоздалый ответ не меняет слоты нового 
     finishRequest(Response.json([]))
   })
   expect(screen.queryByText('На этот день свободного времени нет')).toBeNull()
+  expect(screen.getByRole('button', { name: '10 ноября · Свободно 1' })).toBeDefined()
   expect(chosen.getAttribute('aria-pressed')).toBe('true')
   fireEvent.click(screen.getByRole('button', { name: 'Продолжить' }))
   expect(screen.getByText(/11 ноября.*09:00–09:30 МСК/)).toBeDefined()
@@ -215,6 +240,15 @@ test('форма проверяет имя и email, сохраняет выбр
     expect(name.getAttribute('aria-invalid')).toBe('true')
     expect(email.getAttribute('aria-invalid')).toBe('true')
     expect(name.value).toBe(invalidName)
+    expect(email.value).toBe(invalidEmail)
+    expect(screen.getByText(/11 ноября.*09:30–10:00 МСК/)).toBeDefined()
+  }
+  expect(submissions).toHaveLength(0)
+  fireEvent.change(name, { target: { value: 'Анна' } })
+  for (const invalidEmail of ['anna@.', 'anna@example..org', 'anna@-example.org']) {
+    fireEvent.change(email, { target: { value: invalidEmail } })
+    fireEvent.click(confirm)
+    expect(email.getAttribute('aria-invalid')).toBe('true')
     expect(email.value).toBe(invalidEmail)
     expect(screen.getByText(/11 ноября.*09:30–10:00 МСК/)).toBeDefined()
   }

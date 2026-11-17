@@ -32,10 +32,18 @@ run = [
 ]
 
 [tasks."api:check-generated"]
-description = "Check regenerated OpenAPI and SDK against the clean checkout"
+description = "Verify the OpenAPI and SDK against fresh generator output"
 run = '''
-changes=$(git status --porcelain --untracked-files=all -- openapi frontend/src/api/generated)
+generated=$(mktemp -d)
+trap 'rm -rf "$generated"' EXIT
+pnpm run api:compile --option "@typespec/openapi3.emitter-output-dir=$generated/openapi"
+pnpm run api:sdk --input "$generated/openapi/openapi.yaml" --output "$generated/sdk"
+diff -qr openapi "$generated/openapi"
+diff -qr frontend/src/api/generated "$generated/sdk"
+
+changes=$(git ls-files --modified --others --exclude-standard -- openapi frontend/src/api/generated)
 if [ -n "$changes" ]; then
+  echo "Stage the regenerated files together with the API change:"
   echo "$changes"
   exit 1
 fi
@@ -99,7 +107,7 @@ run = [
 
 [tasks.check]
 description = "Run every check, the same set CI runs"
-run = [{ task = "lint" }, { task = "typecheck" }, { task = "test" }]
+run = [{ task = "api:check-generated" }, { task = "lint" }, { task = "typecheck" }, { task = "test" }]
 
 [tasks.fix]
 description = "Apply automatic fixes (formatters, safe lint fixes)"

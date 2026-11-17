@@ -165,6 +165,9 @@ class BookingHttpTest extends CalendarHttpTest {
             {"guestEmail", "a b@example.org"},
             {"guestEmail", "missing-at"},
             {"guestEmail", "guest@"},
+            {"guestEmail", "anna@."},
+            {"guestEmail", "anna@example..org"},
+            {"guestEmail", "anna@-example.org"},
             {"guestEmail", "two@@example.org"},
             {"guestEmail", "a".repeat(243) + "@example.org"}
           }) {

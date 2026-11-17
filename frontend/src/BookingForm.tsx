@@ -5,6 +5,12 @@ import { type BookingInput, createBooking } from './api'
 
 type GuestContact = Pick<BookingInput, 'guestName' | 'guestEmail'>
 
+const emailAtom = "[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+"
+const domainLabel = '[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?'
+const emailPattern = new RegExp(
+  `^${emailAtom}(?:\\.${emailAtom})*@${domainLabel}(?:\\.${domainLabel})*$`,
+)
+
 interface BookingFormProps {
   typeId: string
   startsAt: string
@@ -34,7 +40,7 @@ export function BookingForm({
     const nextErrors: typeof errors = {}
     if (!guestName || [...guestName].length > 100)
       nextErrors.guestName = 'Введите имя длиной от 1 до 100 символов'
-    if ([...guestEmail].length > 254 || !/^[^\s@]+@[^\s@]+$/u.test(guestEmail))
+    if ([...guestEmail].length > 254 || !emailPattern.test(guestEmail))
       nextErrors.guestEmail = 'Введите корректный email длиной до 254 символов'
     setErrors(nextErrors)
     setFailed(false)

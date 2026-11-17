@@ -89,9 +89,13 @@ export type CreateBookingErrors = {
      * The server could not understand the request due to invalid syntax.
      */
     400: {
-        code: 'INVALID_INPUT' | 'INVALID_START';
+        code: 'INVALID_INPUT';
         message: string;
         field?: string;
+    } | {
+        code: 'INVALID_START';
+        message: string;
+        field: 'startsAt';
     };
     /**
      * The server cannot find the requested resource.

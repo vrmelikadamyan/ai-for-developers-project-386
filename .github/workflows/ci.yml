@@ -36,11 +36,5 @@ jobs:
       - name: Install Chromium system dependencies
         run: mise exec -- pnpm --filter frontend exec playwright install-deps chromium
 
-      - name: Start with empty generated directories
-        run: mise exec -- rm -rf -- openapi frontend/src/api/generated
-
       - name: Run all checks
         run: mise run check
-
-      - name: Check committed OpenAPI and frontend SDK
-        run: mise run api:check-generated

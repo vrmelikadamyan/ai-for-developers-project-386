@@ -163,7 +163,15 @@ interface Bookings {
         @statusCode statusCode: 201;
         @body body: Booking;
       }
-    | ErrorResponse<400, ErrorCode.INVALID_INPUT | ErrorCode.INVALID_START>
+    | InvalidInputResponse
+    | {
+        @statusCode statusCode: 400;
+        @body body: {
+          code: ErrorCode.INVALID_START;
+          message: string;
+          field: "startsAt";
+        };
+      }
     | NotFoundResponse
     | ErrorResponse<409, ErrorCode.SLOT_TAKEN>;
 }

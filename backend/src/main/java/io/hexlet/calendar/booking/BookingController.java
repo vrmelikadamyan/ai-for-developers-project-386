@@ -18,8 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class BookingController implements BookingsApi {
+  private static final String EMAIL_ATOM = "[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+";
+  private static final String DOMAIN_LABEL = "[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?";
   private static final Pattern EMAIL =
-      Pattern.compile("[^@\\s\\p{Z}\\uFEFF]+@[^@\\s\\p{Z}\\uFEFF]+");
+      Pattern.compile("%1$s(?:\\.%1$s)*@%2$s(?:\\.%2$s)*".formatted(EMAIL_ATOM, DOMAIN_LABEL));
 
   private final JdbcClient db;
   private final Clock clock;

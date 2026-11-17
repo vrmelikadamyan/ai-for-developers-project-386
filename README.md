@@ -84,7 +84,7 @@ mise exec -- pnpm --filter frontend exec playwright install --only-shell chromiu
 mise exec -- sh -c 'cd backend && ./mvnw -B -q test -Dtest=BookingBrowserTest'
 ```
 
-`mise run api:generate` компилирует TypeSpec в OpenAPI и генерирует интерфейсы и DTO Spring, а также клиентский SDK. Изменения в `openapi/` и `frontend/src/api/generated/` входят в коммит вместе с контрактом. CI заново создаёт эти каталоги и сверяет их с Git.
+`mise run api:generate` компилирует TypeSpec в OpenAPI и генерирует интерфейсы и DTO Spring, а также клиентский SDK. После изменения контракта добавьте обновлённые файлы из `openapi/` и `frontend/src/api/generated/` в индекс Git вместе с TypeSpec. Локально и в CI команда `mise run check` сначала сравнивает эти файлы с результатом генерации во временном каталоге.
 
 По умолчанию сервер хранит данные в файловой H2 по пути `./data/calendar` относительно своего рабочего каталога. При запуске через `mise run dev` это `backend/data/`. Переменная `SPRING_DATASOURCE_URL` позволяет выбрать другой файл.
 
