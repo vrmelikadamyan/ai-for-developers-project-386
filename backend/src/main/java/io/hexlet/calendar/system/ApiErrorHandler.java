@@ -1,16 +1,38 @@
 package io.hexlet.calendar.system;
 
 import io.hexlet.calendar.api.model.ApiError;
+import io.hexlet.calendar.availability.MeetingTypeNotFound;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import tools.jackson.core.JacksonException;
 
 @RestControllerAdvice
 public class ApiErrorHandler {
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  ApiError invalidParameter(MethodArgumentTypeMismatchException error) {
+    return new ApiError("INVALID_INPUT", "Проверьте формат параметра").field(error.getName());
+  }
+
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  ApiError missingParameter(MissingServletRequestParameterException error) {
+    return new ApiError("INVALID_INPUT", "Обязательный параметр пропущен")
+        .field(error.getParameterName());
+  }
+
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  ApiError meetingTypeNotFound(MeetingTypeNotFound error) {
+    return new ApiError("MEETING_TYPE_NOT_FOUND", "Тип встречи не найден");
+  }
+
   @ExceptionHandler
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   ApiError invalidInput(InvalidInput error) {

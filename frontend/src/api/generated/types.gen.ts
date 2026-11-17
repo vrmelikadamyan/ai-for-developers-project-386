@@ -10,6 +10,11 @@ export type ApiError = {
     field?: string;
 };
 
+export type CalendarDay = {
+    date: string;
+    freeCount: number;
+};
+
 export type Health = {
     status: 'ok';
 };
@@ -25,6 +30,14 @@ export type MeetingTypeInput = {
     description?: string;
     durationMinutes: number;
 };
+
+export type Slot = {
+    startsAt: string;
+    endsAt: string;
+    status: SlotStatus;
+};
+
+export type SlotStatus = 'available' | 'busy';
 
 export type GetHealthData = {
     body?: never;
@@ -82,3 +95,67 @@ export type CreateMeetingTypeResponses = {
 };
 
 export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];
+
+export type GetAvailabilityData = {
+    body?: never;
+    path: {
+        id: Id;
+    };
+    query?: never;
+    url: '/api/meeting-types/{id}/availability';
+};
+
+export type GetAvailabilityErrors = {
+    /**
+     * The server could not understand the request due to invalid syntax.
+     */
+    400: ApiError;
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ApiError;
+};
+
+export type GetAvailabilityError = GetAvailabilityErrors[keyof GetAvailabilityErrors];
+
+export type GetAvailabilityResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<CalendarDay>;
+};
+
+export type GetAvailabilityResponse = GetAvailabilityResponses[keyof GetAvailabilityResponses];
+
+export type GetSlotsData = {
+    body?: never;
+    path: {
+        id: Id;
+    };
+    query: {
+        date: string;
+    };
+    url: '/api/meeting-types/{id}/slots';
+};
+
+export type GetSlotsErrors = {
+    /**
+     * The server could not understand the request due to invalid syntax.
+     */
+    400: ApiError;
+    /**
+     * The server cannot find the requested resource.
+     */
+    404: ApiError;
+};
+
+export type GetSlotsError = GetSlotsErrors[keyof GetSlotsErrors];
+
+export type GetSlotsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<Slot>;
+};
+
+export type GetSlotsResponse = GetSlotsResponses[keyof GetSlotsResponses];

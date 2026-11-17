@@ -66,3 +66,46 @@ interface MeetingTypes {
         @body body: ApiError;
       };
 }
+
+enum SlotStatus {
+  available,
+  busy,
+}
+
+model Slot {
+  startsAt: utcDateTime;
+  endsAt: utcDateTime;
+  status: SlotStatus;
+}
+
+model CalendarDay {
+  date: plainDate;
+  freeCount: int32;
+}
+
+model NotFoundResponse {
+  @statusCode statusCode: 404;
+  @body body: ApiError;
+}
+
+model BadRequestResponse {
+  @statusCode statusCode: 400;
+  @body body: ApiError;
+}
+
+@route("/meeting-types/{id}")
+@tag("availability")
+interface Availability {
+  @get
+  @route("/availability")
+  @operationId("getAvailability")
+  dates(@path id: Id): CalendarDay[] | NotFoundResponse | BadRequestResponse;
+
+  @get
+  @route("/slots")
+  @operationId("getSlots")
+  slots(@path id: Id, @query date: plainDate):
+    | Slot[]
+    | NotFoundResponse
+    | BadRequestResponse;
+}

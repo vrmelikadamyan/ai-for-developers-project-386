@@ -1,7 +1,7 @@
 import { Anchor, Container, Stack, Text, Title } from '@mantine/core'
 
 import { OwnerMeetingTypes } from './OwnerMeetingTypes'
-import { MeetingTypeList } from './MeetingTypeList'
+import { GuestBooking } from './GuestBooking'
 
 export default function App() {
   const path = window.location.pathname
@@ -13,7 +13,7 @@ export default function App() {
         ) : path === '/book' ? (
           <>
             <Title order={1}>Запись на звонок</Title>
-            <MeetingTypeList />
+            <GuestBooking />
             <Anchor href="/">На главную</Anchor>
           </>
         ) : (

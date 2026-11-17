@@ -5,6 +5,7 @@ info:
 tags:
   - name: system
   - name: meeting-types
+  - name: availability
 paths:
   /api/health:
     get:
@@ -58,6 +59,77 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/MeetingTypeInput'
+  /api/meeting-types/{id}/availability:
+    get:
+      operationId: getAvailability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarDay'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - availability
+  /api/meeting-types/{id}/slots:
+    get:
+      operationId: getSlots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      tags:
+        - availability
 components:
   schemas:
     ApiError:
@@ -72,6 +144,18 @@ components:
           type: string
         field:
           type: string
+    CalendarDay:
+      type: object
+      required:
+        - date
+        - freeCount
+      properties:
+        date:
+          type: string
+          format: date
+        freeCount:
+          type: integer
+          format: int32
     Health:
       type: object
       required:
@@ -111,3 +195,23 @@ components:
           format: int32
           minimum: 1
           maximum: 540
+    Slot:
+      type: object
+      required:
+        - startsAt
+        - endsAt
+        - status
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/SlotStatus'
+    SlotStatus:
+      type: string
+      enum:
+        - available
+        - busy
