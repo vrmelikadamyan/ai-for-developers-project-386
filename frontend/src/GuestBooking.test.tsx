@@ -268,3 +268,24 @@ test('форма проверяет имя и email, сохраняет выбр
     },
   ])
 })
+
+test('на границе года дни сгруппированы по месяцам и выровнены с понедельника', async () => {
+  vi.stubGlobal('fetch', async (request: Request) =>
+    Response.json(
+      new URL(request.url).pathname === '/api/meeting-types'
+        ? [type]
+        : [
+            { date: '2026-12-31', freeCount: 3 },
+            { date: '2027-01-01', freeCount: 0 },
+          ],
+    ),
+  )
+  openBooking()
+  fireEvent.click(await screen.findByRole('button', { name: type.name }))
+  expect(await screen.findByRole('heading', { name: /декабрь 2026/i })).toBeDefined()
+  expect(screen.getByRole('heading', { name: /январь 2027/i })).toBeDefined()
+  const last = screen.getByRole<HTMLButtonElement>('button', { name: '31 декабря · Свободно 3' })
+  const first = screen.getByRole<HTMLButtonElement>('button', { name: '1 января · Свободно 0' })
+  expect(last.style.gridColumnStart).toBe('4')
+  expect(first.style.gridColumnStart).toBe('5')
+})

@@ -1,4 +1,5 @@
-import { Anchor, Button, Stack, Text, TextInput, Textarea, Title } from '@mantine/core'
+import { Button, Stack, Text, TextInput, Textarea } from '@mantine/core'
+import { Plus } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 
 import { MeetingTypeList } from './MeetingTypeList'
@@ -42,31 +43,67 @@ export function OwnerMeetingTypes() {
 
   return (
     <>
-      <Title order={1}>Типы встреч</Title>
-      {editing ? (
-        <form noValidate onSubmit={publish}>
+      <div className="page-title title-actions">
+        <div>
+          <h1>Типы встреч</h1>
+          <p>Форматы звонков, на которые могут записаться гости.</p>
+        </div>
+        {!editing && (
+          <button className="action primary" onClick={() => setEditing(true)}>
+            <Plus size={18} />
+            Создать
+          </button>
+        )}
+      </div>
+      {editing && (
+        <form className="panel owner-form" noValidate onSubmit={publish}>
+          <h2>Новый тип встречи</h2>
           <Stack>
-            <TextInput label="Название" name="name" error={errors.name} required />
-            <Textarea label="Описание" name="description" error={errors.description} />
+            <TextInput
+              label="Название"
+              name="name"
+              placeholder="Например, знакомство"
+              error={errors.name}
+              required
+            />
+            <Textarea
+              label="Описание"
+              name="description"
+              placeholder="Что обсудите на звонке?"
+              error={errors.description}
+              rows={3}
+            />
             <TextInput
               label="Длительность в минутах"
               name="durationMinutes"
+              defaultValue="30"
+              min={1}
+              max={540}
               error={errors.durationMinutes}
               type="number"
               required
             />
             {failed && <Text role="alert">Не удалось сохранить тип встречи</Text>}
-            <Button type="submit" loading={saving}>
-              Сохранить
-            </Button>
+            <div className="form-actions">
+              <Button type="submit" loading={saving}>
+                Сохранить
+              </Button>
+              <Button
+                variant="default"
+                disabled={saving}
+                onClick={() => {
+                  setErrors({})
+                  setFailed(false)
+                  setEditing(false)
+                }}
+              >
+                Отмена
+              </Button>
+            </div>
           </Stack>
         </form>
-      ) : (
-        <Button onClick={() => setEditing(true)}>Создать</Button>
       )}
       <MeetingTypeList key={revision} />
-      <Anchor href="/owner/bookings/upcoming">Предстоящие события</Anchor>
-      <Anchor href="/">На главную</Anchor>
     </>
   )
 }

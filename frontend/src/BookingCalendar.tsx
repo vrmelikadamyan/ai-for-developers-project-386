@@ -1,9 +1,22 @@
-import { Button, SimpleGrid, Stack, Text, Title } from '@mantine/core'
+import { ArrowRight, Clock3, MousePointer2 } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
-import { getAvailability, getSlots, type Slot } from './api'
-import { formatDay, formatSlot } from './bookingTime'
+import { getAvailability, getSlots, type CalendarDay, type Slot } from './api'
+import { formatDay, formatInterval, formatMonth, formatSlot } from './bookingTime'
 import { RemoteList } from './RemoteList'
+
+const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+function monthsInWindow(days: CalendarDay[]) {
+  const months = new Map<string, CalendarDay[]>()
+  for (const day of days) {
+    const month = day.date.slice(0, 7)
+    const entries = months.get(month)
+    if (entries) entries.push(day)
+    else months.set(month, [day])
+  }
+  return Array.from(months)
+}
 
 interface SlotProps {
   typeId: string
@@ -31,27 +44,42 @@ function DaySlots({ typeId, date, onFreeCount, onContinue }: SlotProps) {
   return (
     <RemoteList request={load} loading="Загрузка слотов…" error="Не удалось загрузить слоты">
       {(slots) => (
-        <Stack align="flex-start" gap="xs">
-          <Title order={3}>{formatDay(date)}</Title>
+        <>
+          <h3>{formatDay(date)}</h3>
+          <p className="zone">
+            <Clock3 size={15} />
+            Московское время (МСК)
+          </p>
           {!slots.some((slot) => slot.status === 'available') && (
-            <Text>На этот день свободного времени нет</Text>
+            <p>На этот день свободного времени нет</p>
           )}
-          {slots.map((slot) => (
-            <Button
-              key={slot.startsAt}
-              disabled={slot.status === 'busy'}
-              aria-pressed={selected?.startsAt === slot.startsAt}
-              variant={selected?.startsAt === slot.startsAt ? 'filled' : 'light'}
-              onClick={() => setSelected(slot)}
-            >
-              {formatSlot(slot.startsAt, slot.endsAt)} ·{' '}
-              {slot.status === 'busy' ? 'Занято' : 'Свободно'}
-            </Button>
-          ))}
-          <Button disabled={!selected} onClick={() => selected && onContinue(selected)}>
-            Продолжить
-          </Button>
-        </Stack>
+          <div className="slot-grid">
+            {slots.map((slot) => {
+              const busy = slot.status === 'busy'
+              const status = busy ? 'Занято' : 'Свободно'
+              return (
+                <button
+                  className="slot"
+                  key={slot.startsAt}
+                  disabled={busy}
+                  aria-pressed={selected?.startsAt === slot.startsAt}
+                  aria-label={`${formatSlot(slot.startsAt, slot.endsAt)} · ${status}`}
+                  onClick={() => setSelected(slot)}
+                >
+                  <strong>{formatInterval(slot.startsAt, slot.endsAt)}</strong>
+                  <small>{status}</small>
+                </button>
+              )
+            })}
+          </div>
+          <button
+            className="action primary"
+            disabled={!selected}
+            onClick={() => selected && onContinue(selected)}
+          >
+            Продолжить <ArrowRight size={17} />
+          </button>
+        </>
       )}
     </RemoteList>
   )
@@ -76,33 +104,67 @@ export function BookingCalendar({ typeId, date, onDate, onContinue }: CalendarPr
   return (
     <RemoteList request={load} loading="Загрузка календаря…" error="Не удалось загрузить календарь">
       {(days) => (
-        <SimpleGrid cols={{ base: 1, sm: 2 }}>
-          <Stack align="flex-start" gap="xs">
-            <Title order={3}>Выберите день</Title>
+        <div className="calendar-layout">
+          <div className="dates-pane">
+            <h3>Выберите день</h3>
             {days.every((day) => (slotCounts[day.date] ?? day.freeCount) === 0) && (
-              <Text>За ближайшие 14 дней свободного времени нет</Text>
+              <p>За ближайшие 14 дней свободного времени нет</p>
             )}
-            {days.map((day) => (
-              <Button
-                key={day.date}
-                aria-pressed={date === day.date}
-                variant={date === day.date ? 'filled' : 'light'}
-                onClick={() => onDate(day.date)}
-              >
-                {formatDay(day.date)} · Свободно {slotCounts[day.date] ?? day.freeCount}
-              </Button>
+            {monthsInWindow(days).map(([month, entries]) => (
+              <div className="month" key={month}>
+                <h4>{formatMonth(entries[0].date)}</h4>
+                <div className="month-grid">
+                  {weekdays.map((label) => (
+                    <span className="weekday" key={label} aria-hidden="true">
+                      {label}
+                    </span>
+                  ))}
+                  {entries.map((day, index) => {
+                    const count = slotCounts[day.date] ?? day.freeCount
+                    const column = ((new Date(day.date).getUTCDay() + 6) % 7) + 1
+                    return (
+                      <button
+                        className="day"
+                        key={day.date}
+                        data-full={count === 0}
+                        style={index === 0 ? { gridColumnStart: column } : undefined}
+                        aria-label={`${formatDay(day.date)} · Свободно ${count}`}
+                        aria-pressed={date === day.date}
+                        onClick={() => onDate(day.date)}
+                      >
+                        <strong>{Number(day.date.slice(-2))}</strong>
+                        <small>{count}</small>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             ))}
-          </Stack>
-          {date && days.some((day) => day.date === date) && (
-            <DaySlots
-              key={date}
-              typeId={typeId}
-              date={date}
-              onFreeCount={updateFreeCount}
-              onContinue={onContinue}
-            />
-          )}
-        </SimpleGrid>
+            <p className="legend">
+              <i />
+              Число под датой — свободные интервалы
+            </p>
+          </div>
+          <div className="times-pane">
+            {date && days.some((day) => day.date === date) ? (
+              <DaySlots
+                key={date}
+                typeId={typeId}
+                date={date}
+                onFreeCount={updateFreeCount}
+                onContinue={onContinue}
+              />
+            ) : (
+              <div className="slot-hint">
+                <span className="tile-icon lilac">
+                  <MousePointer2 />
+                </span>
+                <h3>Время звонка</h3>
+                <p>Выберите дату в календаре, чтобы увидеть свободные интервалы.</p>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </RemoteList>
   )
