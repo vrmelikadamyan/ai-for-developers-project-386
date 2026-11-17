@@ -31,10 +31,10 @@ jobs:
           restore-keys: maven-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: mise exec -- pnpm install --frozen-lockfile
+
+      - name: Install Chromium system dependencies
+        run: mise exec -- pnpm --filter frontend exec playwright install-deps chromium
 
       - name: Run all checks
         run: mise run check
-
-      - name: Generated OpenAPI spec is committed
-        run: git diff --exit-code -- openapi/

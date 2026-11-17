@@ -22,11 +22,12 @@ All tools and versions come from `mise.toml`; run everything through mise from t
 2. `openapi-generator` (Maven `generate-sources`) builds the Spring interfaces (`io.hexlet.calendar.api.*Api`) and DTOs from it. Controllers in `backend/` implement these interfaces.
 3. `@hey-api/openapi-ts` (root `openapi-ts.config.ts`) builds the typed fetch SDK in `frontend/src/api/generated/`.
 
-Change the API in `spec/` first, never in generated code: `backend/target/` and `frontend/src/api/generated/` are gitignored.
+Change the API in `spec/` and regenerate. Never edit `openapi/openapi.yaml`, `backend/target/generated-sources/openapi/`, or `frontend/src/api/generated/` by hand.
 
 ## Rules
 
 - Commits follow Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `ci:`). The hk `commit-msg` hook enforces it.
+- Each implementation commit references its GitHub issue in the subject, e.g. `feat: book a free slot (#12)`.
 - Do not edit or rename `.github/workflows/hexlet-check.yml`; it belongs to Hexlet. Our CI is `.github/workflows/ci.yml`.
 - Backend packages are `@NullMarked` (`package-info.java`), and NullAway fails the build on null misuse. Mark nullable values with `org.jspecify.annotations.Nullable`.
 - The root package pins TypeScript 6 only for the SDK generator, because it needs the TS JS API that TS 7 lacks. The frontend uses TypeScript 7.

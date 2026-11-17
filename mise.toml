@@ -24,10 +24,30 @@ run = ["pnpm install --frozen-lockfile", "hk install --mise"]
 # --- API contract: TypeSpec -> OpenAPI -> SDK ----------------------------
 
 [tasks."api:generate"]
-description = "Compile TypeSpec into openapi/openapi.yaml and generate the frontend SDK"
-sources = ["spec/**/*.tsp", "tspconfig.yaml", "openapi-ts.config.ts"]
-outputs = ["openapi/openapi.yaml", "frontend/src/api/generated/index.ts"]
-run = ["pnpm run api:compile", "pnpm run api:sdk"]
+description = "Generate OpenAPI, Spring interfaces and DTOs, and the frontend SDK from TypeSpec"
+run = [
+  "pnpm run api:compile",
+  "cd backend && ./mvnw -B -q generate-sources",
+  "pnpm run api:sdk",
+]
+
+[tasks."api:check-generated"]
+description = "Verify the OpenAPI and SDK against fresh generator output"
+run = '''
+generated=$(mktemp -d)
+trap 'rm -rf "$generated"' EXIT
+pnpm run api:compile --option "@typespec/openapi3.emitter-output-dir=$generated/openapi"
+pnpm run api:sdk --input "$generated/openapi/openapi.yaml" --output "$generated/sdk"
+diff -qr openapi "$generated/openapi"
+diff -qr frontend/src/api/generated "$generated/sdk"
+
+changes=$(git ls-files --modified --others --exclude-standard -- openapi frontend/src/api/generated)
+if [ -n "$changes" ]; then
+  echo "Stage the regenerated files together with the API change:"
+  echo "$changes"
+  exit 1
+fi
+'''
 
 # --- Run -----------------------------------------------------------------
 
@@ -68,7 +88,7 @@ run = [
   "pnpm --filter frontend run lint",
   "pnpm --filter frontend run format:check",
   "cd backend && ./mvnw -B -q spotless:check",
-  "jactionlint .github/workflows/ci.yml",
+  "jactionlint .github/workflows/ci.yml .github/workflows/release-please.yml",
 ]
 
 [tasks.typecheck]
@@ -77,13 +97,17 @@ depends = ["api:generate"]
 run = ["pnpm --filter frontend run typecheck", "cd backend && ./mvnw -B -q compile"]
 
 [tasks.test]
-description = "Tests (Vitest for frontend, JUnit for backend)"
+description = "Tests (Vitest, JUnit and the Chromium booking scenario)"
 depends = ["api:generate"]
-run = ["pnpm --filter frontend run test", "cd backend && ./mvnw -B -q test"]
+run = [
+  "pnpm --filter frontend run test",
+  "pnpm --filter frontend exec playwright install --only-shell chromium",
+  "cd backend && ./mvnw -B -q test",
+]
 
 [tasks.check]
 description = "Run every check, the same set CI runs"
-run = [{ task = "lint" }, { task = "typecheck" }, { task = "test" }]
+run = [{ task = "api:check-generated" }, { task = "lint" }, { task = "typecheck" }, { task = "test" }]
 
 [tasks.fix]
 description = "Apply automatic fixes (formatters, safe lint fixes)"

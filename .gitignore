@@ -4,3 +4,5 @@ node_modules/
 *.iml
 .vscode/
 openapi-ts-error-*.log
+**/data/*.mv.db
+**/data/*.trace.db

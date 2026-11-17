@@ -4,7 +4,101 @@ info:
   version: 0.1.0
 tags:
   - name: system
+  - name: meeting-types
+  - name: availability
+  - name: bookings
+  - name: owner-bookings
 paths:
+  /api/bookings:
+    post:
+      operationId: createBooking
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - INVALID_INPUT
+                      message:
+                        type: string
+                      field:
+                        type: string
+                    required:
+                      - code
+                      - message
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - INVALID_START
+                      message:
+                        type: string
+                      field:
+                        type: string
+                        enum:
+                          - startsAt
+                    required:
+                      - code
+                      - message
+                      - field
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - MEETING_TYPE_NOT_FOUND
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - SLOT_TAKEN
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+      tags:
+        - bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingInput'
   /api/health:
     get:
       operationId: getHealth
@@ -18,8 +112,281 @@ paths:
                 $ref: '#/components/schemas/Health'
       tags:
         - system
+  /api/meeting-types:
+    get:
+      operationId: listMeetingTypes
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingType'
+      tags:
+        - meeting-types
+    post:
+      operationId: createMeetingType
+      parameters: []
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INVALID_INPUT
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+      tags:
+        - meeting-types
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingTypeInput'
+  /api/meeting-types/{id}/availability:
+    get:
+      operationId: getAvailability
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CalendarDay'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INVALID_INPUT
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - MEETING_TYPE_NOT_FOUND
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+      tags:
+        - availability
+  /api/meeting-types/{id}/slots:
+    get:
+      operationId: getSlots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Id'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - INVALID_INPUT
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    enum:
+                      - MEETING_TYPE_NOT_FOUND
+                  message:
+                    type: string
+                  field:
+                    type: string
+                required:
+                  - code
+                  - message
+      tags:
+        - availability
+  /api/owner/bookings/upcoming:
+    get:
+      operationId: listUpcomingBookings
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+      tags:
+        - owner-bookings
 components:
   schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+        field:
+          type: string
+    Booking:
+      type: object
+      required:
+        - meetingTypeId
+        - startsAt
+        - guestName
+        - guestEmail
+        - id
+        - meetingTypeName
+        - endsAt
+        - createdAt
+      properties:
+        meetingTypeId:
+          $ref: '#/components/schemas/Id'
+        startsAt:
+          type: string
+          format: date-time
+        guestName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        guestEmail:
+          type: string
+          maxLength: 254
+          format: email
+        id:
+          $ref: '#/components/schemas/Id'
+        meetingTypeName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        endsAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    BookingInput:
+      type: object
+      required:
+        - meetingTypeId
+        - startsAt
+        - guestName
+        - guestEmail
+      properties:
+        meetingTypeId:
+          $ref: '#/components/schemas/Id'
+        startsAt:
+          type: string
+          format: date-time
+          description: A timestamp with seconds and an explicit UTC offset. Fractional seconds have up to nine digits.
+        guestName:
+          type: string
+          description: Trim surrounding whitespace, then require 1–100 Unicode code points.
+        guestEmail:
+          type: string
+          description: Trim surrounding whitespace, then require an email of at most 254 Unicode code points.
+    CalendarDay:
+      type: object
+      required:
+        - date
+        - freeCount
+      properties:
+        date:
+          type: string
+          format: date
+        freeCount:
+          type: integer
+          format: int32
+    ErrorCode:
+      type: string
+      enum:
+        - INVALID_INPUT
+        - INVALID_START
+        - MEETING_TYPE_NOT_FOUND
+        - SLOT_TAKEN
     Health:
       type: object
       required:
@@ -29,3 +396,64 @@ components:
           type: string
           enum:
             - ok
+    Id:
+      type: string
+      format: uuid
+    MeetingType:
+      type: object
+      required:
+        - name
+        - durationMinutes
+        - id
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 540
+        id:
+          $ref: '#/components/schemas/Id'
+    MeetingTypeInput:
+      type: object
+      required:
+        - name
+        - durationMinutes
+      properties:
+        name:
+          type: string
+          description: Trim surrounding whitespace, then require 1–100 Unicode code points.
+        description:
+          type: string
+          description: Trim surrounding whitespace, then allow up to 1000 Unicode code points.
+        durationMinutes:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 540
+    Slot:
+      type: object
+      required:
+        - startsAt
+        - endsAt
+        - status
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/SlotStatus'
+    SlotStatus:
+      type: string
+      enum:
+        - available
+        - busy
