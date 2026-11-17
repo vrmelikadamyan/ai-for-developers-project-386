@@ -28,7 +28,7 @@ export function RemoteList<T>({ request, loading, error, children }: Props<T>) {
 
   if (state.status === 'failed') {
     return (
-      <Stack align="flex-start" gap="xs">
+      <Stack className="remote-state" align="flex-start" gap="xs">
         <Text role="alert">{error}</Text>
         <Button
           variant="light"
@@ -43,5 +43,9 @@ export function RemoteList<T>({ request, loading, error, children }: Props<T>) {
     )
   }
   if (state.status === 'loaded') return children(state.data)
-  return <Text role="status">{loading}</Text>
+  return (
+    <Text className="remote-state" role="status">
+      {loading}
+    </Text>
+  )
 }

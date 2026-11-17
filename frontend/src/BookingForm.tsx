@@ -71,9 +71,10 @@ export function BookingForm({
 
   return (
     <form noValidate onSubmit={confirm}>
-      <Stack align="flex-start">
+      <Stack>
         <TextInput
           label="Имя"
+          placeholder="Как вас зовут?"
           name="guestName"
           value={contact.guestName}
           disabled={saving}
@@ -86,6 +87,7 @@ export function BookingForm({
         />
         <TextInput
           label="Email"
+          placeholder="name@example.org"
           name="guestEmail"
           value={contact.guestEmail}
           disabled={saving}
@@ -98,12 +100,14 @@ export function BookingForm({
           required
         />
         {failed && <Text role="alert">Не удалось подтвердить запись</Text>}
-        <Button type="submit" loading={saving}>
-          Подтвердить запись
-        </Button>
-        <Button type="button" variant="light" disabled={saving} onClick={() => onBack()}>
-          Выбрать другое время
-        </Button>
+        <div className="form-actions">
+          <Button type="submit" loading={saving}>
+            Подтвердить запись
+          </Button>
+          <Button type="button" variant="default" disabled={saving} onClick={() => onBack()}>
+            Выбрать другое время
+          </Button>
+        </div>
       </Stack>
     </form>
   )
