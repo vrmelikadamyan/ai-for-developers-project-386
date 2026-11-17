@@ -65,6 +65,7 @@ export function OwnerMeetingTypes() {
         <Button onClick={() => setEditing(true)}>Создать</Button>
       )}
       <MeetingTypeList key={revision} />
+      <Anchor href="/owner/bookings/upcoming">Предстоящие события</Anchor>
       <Anchor href="/">На главную</Anchor>
     </>
   )

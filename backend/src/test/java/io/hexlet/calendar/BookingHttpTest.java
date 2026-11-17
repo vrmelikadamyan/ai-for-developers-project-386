@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
@@ -16,6 +17,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 class BookingHttpTest extends CalendarHttpTest {
+  private static final String UPCOMING = "/api/owner/bookings/upcoming";
   private static final JsonMapper JSON = JsonMapper.builder().build();
 
   private RestTestClient.ResponseSpec book(
@@ -34,18 +36,31 @@ class BookingHttpTest extends CalendarHttpTest {
   }
 
   @Test
-  void confirmationReturnsNormalizedContactsAndStillOccupiesTheSlotAfterRestart() {
-    UUID type;
+  void confirmedBookingAndBothMeetingCalendarsSurviveServerRestart() {
+    UUID halfHour;
+    UUID longer;
+    List<JsonNode> types;
+    JsonNode booking;
     try (var app = start()) {
       var http = http(app);
-      type = publish(http, 30);
+      halfHour = publish(http, 30);
+      longer = publish(http, 45, "Консультация", "Обсуждение проекта");
+      types = getList(http, "/api/meeting-types");
+      assertThat(types)
+          .extracting(type -> type.get("id").asString())
+          .containsExactlyInAnyOrder(halfHour.toString(), longer.toString());
       var bytes =
-          book(http, type, "2026-11-11T06:30:00Z", "  Анна-Мария Ли ", " anna+work@example.org  ")
+          book(
+                  http,
+                  halfHour,
+                  "2026-11-11T06:30:00Z",
+                  "  Анна-Мария Ли ",
+                  " anna+work@example.org  ")
               .expectStatus()
               .isCreated()
               .expectBody()
               .jsonPath("$.meetingTypeId")
-              .isEqualTo(type.toString())
+              .isEqualTo(halfHour.toString())
               .jsonPath("$.meetingTypeName")
               .isEqualTo("Знакомство")
               .jsonPath("$.startsAt")
@@ -60,10 +75,16 @@ class BookingHttpTest extends CalendarHttpTest {
               .isEqualTo("anna+work@example.org")
               .returnResult()
               .getResponseBody();
-      UUID.fromString(JSON.readTree(bytes).get("id").asString());
+      booking = JSON.readTree(bytes);
+      UUID.fromString(booking.get("id").asString());
+      assertThat(getList(http, UPCOMING)).containsExactly(booking);
+      assertOccupiedCalendars(http, halfHour, longer);
     }
     try (var restarted = start()) {
-      assertDay(http(restarted), type, 18, 17, List.of("2026-11-11T06:30:00Z"));
+      var http = http(restarted);
+      assertThat(getList(http, "/api/meeting-types")).isEqualTo(types);
+      assertThat(getList(http, UPCOMING)).containsExactly(booking);
+      assertOccupiedCalendars(http, halfHour, longer);
     }
   }
 
@@ -161,6 +182,7 @@ class BookingHttpTest extends CalendarHttpTest {
           .isEqualTo("MEETING_TYPE_NOT_FOUND")
           .jsonPath("$.message")
           .isNotEmpty();
+      assertThat(getList(http, UPCOMING)).isEmpty();
       var name = "😀".repeat(100);
       var email = "a".repeat(242) + "@example.org";
       book(http, type, start, " " + name + " ", " " + email + " ")
@@ -255,9 +277,59 @@ class BookingHttpTest extends CalendarHttpTest {
       assertThat(winner.body().get("guestEmail").asString()).isEqualTo(winner.email());
       assertThat(conflict.body().get("code").asString()).isEqualTo("SLOT_TAKEN");
       assertThat(conflict.body().get("message").asString()).isEqualTo("Слот занят");
-      assertDay(http, halfHour, 18, 17, List.of("2026-11-11T06:30:00Z"));
-      assertDay(http, longer, 12, 10, List.of("2026-11-11T06:00:00Z", "2026-11-11T06:45:00Z"));
+      assertThat(getList(http, UPCOMING)).containsExactly(winner.body());
+      assertOccupiedCalendars(http, halfHour, longer);
     }
+  }
+
+  private List<JsonNode> getList(RestTestClient http, String path) {
+    return List.of(
+        Objects.requireNonNull(
+            http.get()
+                .uri(path)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(JsonNode[].class)
+                .returnResult()
+                .getResponseBody()));
+  }
+
+  @Test
+  void ownerSeesAllTypesInStartOrderUntilTheMomentEachCallStarts() {
+    JsonNode early;
+    JsonNode later;
+    try (var app = start("--calendar.test-now=2026-11-11T05:59:00Z")) {
+      var http = http(app);
+      var longer = publish(http, 45, "Консультация", "Обсуждение проекта");
+      var halfHour = publish(http, 30);
+      later =
+          book(http, longer, "2026-11-11T06:45:00Z", "Лев", "lev@example.org")
+              .expectStatus()
+              .isCreated()
+              .expectBody(JsonNode.class)
+              .returnResult()
+              .getResponseBody();
+      early =
+          book(http, halfHour, "2026-11-11T06:00:00Z", "Анна", "anna@example.org")
+              .expectStatus()
+              .isCreated()
+              .expectBody(JsonNode.class)
+              .returnResult()
+              .getResponseBody();
+      assertThat(getList(http, UPCOMING)).containsExactly(early, later);
+    }
+    // 09:00, 09:15 and 09:31 in Moscow. The 09:45 call remains upcoming.
+    for (var now : List.of("06:00", "06:15", "06:31")) {
+      try (var app = start("--calendar.test-now=2026-11-11T" + now + ":00Z")) {
+        assertThat(getList(http(app), UPCOMING)).containsExactly(later);
+      }
+    }
+  }
+
+  private void assertOccupiedCalendars(RestTestClient http, UUID halfHour, UUID longer) {
+    assertDay(http, halfHour, 18, 17, List.of("2026-11-11T06:30:00Z"));
+    assertDay(http, longer, 12, 10, List.of("2026-11-11T06:00:00Z", "2026-11-11T06:45:00Z"));
   }
 
   private void assertDay(

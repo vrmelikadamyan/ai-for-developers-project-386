@@ -7,6 +7,7 @@ tags:
   - name: meeting-types
   - name: availability
   - name: bookings
+  - name: owner-bookings
 paths:
   /api/bookings:
     post:
@@ -168,6 +169,21 @@ paths:
                 $ref: '#/components/schemas/ApiError'
       tags:
         - availability
+  /api/owner/bookings/upcoming:
+    get:
+      operationId: listUpcomingBookings
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+      tags:
+        - owner-bookings
 components:
   schemas:
     ApiError:

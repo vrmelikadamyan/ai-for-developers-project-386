@@ -116,3 +116,44 @@ test('форма проверяет границы после удаления �
   fireEvent.click(submit)
   expect(await screen.findByRole('button', { name: 'Создать' })).toBeDefined()
 })
+
+test('владелец открывает предстоящие события и видит контакты и даты по Москве', async () => {
+  vi.stubGlobal('fetch', async (request: Request) => {
+    const path = new URL(request.url).pathname
+    if (path === '/api/meeting-types') return Response.json([])
+    if (path !== '/api/owner/bookings/upcoming') throw new Error('Unknown path')
+    return Response.json([
+      {
+        id: '3264314b-1a11-45d8-9ab2-a8aeab146faa',
+        meetingTypeId: 'da9ec1d5-7c72-4a3e-b791-e2183672b928',
+        meetingTypeName: 'Знакомство',
+        startsAt: '2026-11-11T06:30:00Z',
+        endsAt: '2026-11-11T07:00:00Z',
+        createdAt: '2026-11-09T22:00:00Z',
+        guestName: 'Анна-Мария Ли',
+        guestEmail: 'anna+work@example.org',
+      },
+    ])
+  })
+  const home = openPage('/')
+  const fromHome = screen.getByRole('link', { name: 'Предстоящие события' }).getAttribute('href')
+  home.unmount()
+  const owner = openPage('/owner/meeting-types')
+  const path = screen.getByRole('link', { name: 'Предстоящие события' }).getAttribute('href')!
+  expect(path).toBe(fromHome)
+  owner.unmount()
+  openPage(path)
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'Предстоящие события' }),
+  ).toBeDefined()
+  const booking = await screen.findByRole('listitem')
+  for (const detail of [
+    'Знакомство',
+    'Анна-Мария Ли',
+    'anna+work@example.org',
+    '11 ноября, 09:30–10:00 МСК',
+    'Дата создания: 10 ноября',
+  ]) {
+    expect(booking.textContent).toContain(detail)
+  }
+})

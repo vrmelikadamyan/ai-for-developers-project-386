@@ -206,3 +206,19 @@ export type GetSlotsResponses = {
 };
 
 export type GetSlotsResponse = GetSlotsResponses[keyof GetSlotsResponses];
+
+export type ListUpcomingBookingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/owner/bookings/upcoming';
+};
+
+export type ListUpcomingBookingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<Booking>;
+};
+
+export type ListUpcomingBookingsResponse = ListUpcomingBookingsResponses[keyof ListUpcomingBookingsResponses];

@@ -147,3 +147,12 @@ interface Bookings {
         @body body: ApiError;
       };
 }
+
+@route("/owner/bookings")
+@tag("owner-bookings")
+interface OwnerBookings {
+  @get
+  @route("/upcoming")
+  @operationId("listUpcomingBookings")
+  upcoming(): Booking[];
+}

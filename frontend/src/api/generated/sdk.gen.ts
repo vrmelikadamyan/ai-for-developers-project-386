@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateBookingData, CreateBookingErrors, CreateBookingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, GetSlotsData, GetSlotsErrors, GetSlotsResponses, ListMeetingTypesData, ListMeetingTypesResponses } from './types.gen';
+import type { CreateBookingData, CreateBookingErrors, CreateBookingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetHealthData, GetHealthResponses, GetSlotsData, GetSlotsErrors, GetSlotsResponses, ListMeetingTypesData, ListMeetingTypesResponses, ListUpcomingBookingsData, ListUpcomingBookingsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -43,3 +43,5 @@ export const createMeetingType = <ThrowOnError extends boolean = false>(options:
 export const getAvailability = <ThrowOnError extends boolean = false>(options: Options<GetAvailabilityData, ThrowOnError>): RequestResult<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError> => (options.client ?? client).get<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError>({ url: '/api/meeting-types/{id}/availability', ...options });
 
 export const getSlots = <ThrowOnError extends boolean = false>(options: Options<GetSlotsData, ThrowOnError>): RequestResult<GetSlotsResponses, GetSlotsErrors, ThrowOnError> => (options.client ?? client).get<GetSlotsResponses, GetSlotsErrors, ThrowOnError>({ url: '/api/meeting-types/{id}/slots', ...options });
+
+export const listUpcomingBookings = <ThrowOnError extends boolean = false>(options?: Options<ListUpcomingBookingsData, ThrowOnError>): RequestResult<ListUpcomingBookingsResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ListUpcomingBookingsResponses, unknown, ThrowOnError>({ url: '/api/owner/bookings/upcoming', ...options });
