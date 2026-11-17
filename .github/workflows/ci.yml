@@ -33,6 +33,9 @@ jobs:
       - name: Install dependencies
         run: mise exec -- pnpm install --frozen-lockfile
 
+      - name: Install Chromium system dependencies
+        run: mise exec -- pnpm --filter frontend exec playwright install-deps chromium
+
       - name: Start with empty generated directories
         run: mise exec -- rm -rf -- openapi frontend/src/api/generated
 

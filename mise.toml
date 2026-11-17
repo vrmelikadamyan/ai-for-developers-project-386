@@ -89,9 +89,13 @@ depends = ["api:generate"]
 run = ["pnpm --filter frontend run typecheck", "cd backend && ./mvnw -B -q compile"]
 
 [tasks.test]
-description = "Tests (Vitest for frontend, JUnit for backend)"
+description = "Tests (Vitest, JUnit and the Chromium booking scenario)"
 depends = ["api:generate"]
-run = ["pnpm --filter frontend run test", "cd backend && ./mvnw -B -q test"]
+run = [
+  "pnpm --filter frontend run test",
+  "pnpm --filter frontend exec playwright install --only-shell chromium",
+  "cd backend && ./mvnw -B -q test",
+]
 
 [tasks.check]
 description = "Run every check, the same set CI runs"

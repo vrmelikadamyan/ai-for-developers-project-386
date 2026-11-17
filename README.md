@@ -43,7 +43,7 @@
 - **API-контракт:** [TypeSpec](https://typespec.io/) → OpenAPI 3 (`openapi/openapi.yaml`)
 - **Бекенд:** Java 25, Spring Boot 4, Maven; серверные интерфейсы и DTO генерирует `openapi-generator`
 - **Фронтенд:** TypeScript, React, Vite, Mantine; клиентский SDK генерирует `@hey-api/openapi-ts`
-- **Тесты:** JUnit 5 (бекенд), Vitest + Testing Library (фронтенд)
+- **Тесты:** JUnit 5 (бекенд), Vitest + Testing Library (фронтенд), Playwright + Chromium (сквозная запись на звонок)
 - **Линтеры:** Error Prone + NullAway, Spotless (google-java-format), Oxlint + oxfmt, `tsc`, jactionlint
 - **Окружение:** [mise](https://mise.jdx.dev/) (версии инструментов, задачи, daemons), [hk](https://hk.jdx.dev/) (git-хуки)
 
@@ -74,6 +74,15 @@ mise run check
 ```
 
 Прогоняет все проверки — линтеры, проверку типов и тесты. Та же команда запускается в GitHub Actions на каждый push.
+
+При первом запуске тестов Playwright скачивает свою версию Chromium. В минимальной установке Ubuntu системные библиотеки для браузера можно поставить командой `mise exec -- pnpm --filter frontend exec playwright install-deps chromium`. Сквозной тест поднимает Spring и Vite на свободных портах, использует временную файловую H2 и проверяет одну запись в отдельных сессиях владельца и гостя.
+
+Запустить только этот сценарий после установки зависимостей:
+
+```bash
+mise exec -- pnpm --filter frontend exec playwright install --only-shell chromium
+mise exec -- sh -c 'cd backend && ./mvnw -B -q test -Dtest=BookingBrowserTest'
+```
 
 `mise run api:generate` компилирует TypeSpec в OpenAPI и генерирует интерфейсы и DTO Spring, а также клиентский SDK. Изменения в `openapi/` и `frontend/src/api/generated/` входят в коммит вместе с контрактом. CI заново создаёт эти каталоги и сверяет их с Git.
 
